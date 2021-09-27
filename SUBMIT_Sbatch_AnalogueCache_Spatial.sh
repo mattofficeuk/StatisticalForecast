@@ -8,7 +8,7 @@ var=SST
 rmse_method="False"
 
 check_save_trends_file="False"
-save_trends_file=/home/users/mmenary/scripts/InputFilesList3_ANNUAL_ANALOGUESST_DOMAIN+65+00+00-90_TARGETsubpolar_gyre_WINDOW35_MEMS100_SpatialSkill_RMSEmethod.txt
+save_trends_file=/home/users/lfbor/python/scripts/InputFilesList3_ANNUAL_ANALOGUESST_DOMAIN+65+00+00-90_TARGETsubpolar_gyre_WINDOW35_MEMS100_SpatialSkill_RMSEmethod.txt
 
 # This can be PICON (for CMIP5+6 combined), CMIP5, CMIP6, DAMIP6
 typeset -l choice  # To ignore case
@@ -23,11 +23,11 @@ choice=$1
 # max_jobs=150
 
 # Jasmin
-scripts_dir=/home/users/mmenary/scripts
-output_dir=/work/scratch-nopw/mmenary/output2
-analogue_datadir_in=/work/scratch-nopw/mmenary/AnalogueCache
-datadir=/work/scratch-nopw/mmenary/CMIP_${var}
-runscript=${scripts_dir}/AnalogueCache_Spatial.py
+scripts_dir=/home/users/lfbor/python/scripts
+output_dir=/work/scratch-nopw/lborchert/output2
+analogue_datadir_in=/work/scratch-nopw/lborchert/AnalogueCache
+datadir=/work/scratch-nopw/lborchert/CMIP_${var}
+runscript=${scripts_dir}/AnalogueCache_Spatial_nonregrid.py
 queue="short-serial"
 #max_jobs=1850
 max_jobs=5000
@@ -84,7 +84,7 @@ target_domains="+65+00+00-90"
 
 smoothings="1 5 11 21"
 smoothings="1 11 21"
-smoothings="1"
+smoothings="5"
 
 testing="False"
 

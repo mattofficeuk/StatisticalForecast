@@ -389,9 +389,9 @@ def read_forecast_data(corr_info, nlead):
                 continue
 
             if experiment == 'piControl':
-                base_file = '{:s}_{:s}_{:s}_{:s}_Annual_Regridded.pkl'.format(project, forecast_var, model, experiment)
+                base_file = '{:s}_{:s}_{:s}_{:s}_Annual.pkl'.format(project, forecast_var, model, experiment)
             else:
-                base_file = '{:s}_{:s}_{:s}_{:s}-{:s}_Annual_Regridded.pkl'.format(project, forecast_var, model, experiment, ens_mem)
+                base_file = '{:s}_{:s}_{:s}_{:s}-{:s}_Annual.pkl'.format(project, forecast_var, model, experiment, ens_mem)
             this_file = os.path.join(forecast_datadir, base_file)
 
             if not os.path.isfile(this_file):
@@ -401,9 +401,10 @@ def read_forecast_data(corr_info, nlead):
             print(this_file)
             print(target_region)
             with open(this_file, 'rb') as handle:
-                sst_ts_in, year_in, _ = pickle.load(handle, encoding='latin')
+                _, sst_ts_in, _, _, _, year_in = pickle.load(handle, encoding='latin')
+                #sst_ts_in, year_in, _
                 #_, sst_ts_in, _, _, _, year_in
-                #print(sst_ts_in)
+                print(sst_ts_in)
                 sst_ts_in  =  sst_ts_in[target_region]
 
             if len(year_in) == 0:

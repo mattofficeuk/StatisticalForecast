@@ -5,16 +5,16 @@
 analogue_var="SST"
 #analogue_var="DepthAverageT"
 forecast_var="SST"
-rmse_method="False"
+rmse_method="True"
 pass_number="1"
 remake_saves="True"
 testing="False"
 
 # Jasmin
-output_dir=/work/scratch-nopw/mmenary/output3
-scripts_dir=/home/users/mmenary/scripts
-analogue_datadir_in=/work/scratch-nopw/mmenary/AnalogueCache
-runscript=${scripts_dir}/AnalogueCache_Spatial_Skill.py
+output_dir=/work/scratch-nopw/lborchert/output3
+scripts_dir=/home/users/lfbor/python/scripts
+analogue_datadir_in=/work/scratch-nopw/lborchert/AnalogueCache
+runscript=${scripts_dir}/AnalogueCache_Spatial_Skill_nonregrid.py
 queue="short-serial"
 #queue="long-serial"  # NOTE ALSO TIME CHANGED TO 168 IN SUBMIT!
 
@@ -41,7 +41,7 @@ target_domains="+75+45+45-05 +65+00+00-90 +65+10+45-60 +50+00+40-70 +30+20+00-85
 target_domains="+65+00+00-90"
 
 smoothings="1 11 21"
-smoothings="1"
+smoothings="5"
 
 subsets="picontrols_only None skip_local_hist strong_forcing_only"
 subsets="None"

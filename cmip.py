@@ -1,7 +1,10 @@
 import numpy as np
 import os
 import sys
-from numerics import find_nearest
+def find_nearest(array, value):
+    array = np.asarray(array)
+    idx = (np.abs(array - value)).argmin()
+    return array[idx]
 import glob
 
 radius_earth = 6371229.
@@ -164,9 +167,9 @@ def get_files(institute, model, suffices=None, base_path=None):
             found_files.append(os.path.realpath(os.path.join(full_path, files[ff])))
             # found_files.append(os.path.join(full_path, files[ff]))
     else:
-        print "Could not find files"
-        print "Path start: {:s}".format(os.path.join(base_path, institute, model))
-        print "Final attempt was: {:s}".format(full_path)
+        print("Could not find files")
+        print("Path start: {:s}".format(os.path.join(base_path, institute, model)))
+        print("Final attempt was: {:s}".format(full_path))
     return found_files
 
 # ==================
@@ -176,7 +179,7 @@ def get_files(institute, model, suffices=None, base_path=None):
 def edit_suffices_for_dcpp(input_suffix_array):
     output_suffix_array = []
     for element in input_suffix_array:
-        print element
+        print(element)
         split = element.split('/')
         if split[0] == 'piControl':  # If we've added bonus piControl suffices (for cell info etc) then don't alter these
             fixed_element = element
@@ -237,7 +240,7 @@ def apply_mask(variable, lon, lat, model='', north_atlantic_only=False):
                       'SAM0-UNICON', 'CESM2-WACCM', 'MIROC6', 'CESM1-BGC', 'CESM1-WACCM', 'CESM1-CAM5',
                       'CESM1-FASTCHEM', 'GFDL-ESM2G', 'CCSM4', 'GISS-E2-R', 'GISS-E2-H-CC', 'MRI-CGCM3']
     if model in special_models:
-        print " == Applying special rule for {:s}".format(model)
+        print(" == Applying special rule for {:s}".format(model))
     if model in ['CESM2', 'CESM1-CAM5-2-FV2', 'SAM0-UNICON', 'CESM2-WACCM', 'CESM1-BGC', 'CESM1-WACCM',
                  'CESM1-CAM5', 'CESM1-FASTCHEM', 'CCSM4', 'CESM1-CAM5-1-FV2']:
         mask[219:224, 280] = True
@@ -302,7 +305,7 @@ def arc_length(lon_bnds_vertices, lat_bnds_vertices, j_direction=False):
     nj, ni, n_vertices = lon_bnds_vertices.shape
     jj, ii = 100, 100  # For testing 4-corner data
     if n_vertices == 2:
-        print "n_vertices_equals_2: Should check this model"
+        print("n_vertices_equals_2: Should check this model")
         bottom, top = 0, 1
         left, right = 0, 1
 
@@ -322,7 +325,7 @@ def arc_length(lon_bnds_vertices, lat_bnds_vertices, j_direction=False):
     #     # Where there are 4 "corners" but actually they are just (wrongly?) copied
     #     # Appears to be the case for MPI-ESM1-2-HR decadal data
     elif n_vertices == 4:
-        print "n_vertices_equals_4"
+        print("n_vertices_equals_4")
         bottom_left, bottom_right, top_right, top_left = find_vertex_indices(lon_bnds_vertices[jj, ii, :], lat_bnds_vertices[jj, ii, :])
 
         if j_direction:
@@ -380,7 +383,7 @@ def find_var_name(file_handle_in, variable, second_loaded=False):
             break
 
     if file_handle_out == False and second_loaded != False:
-        print " == Searching second file handle"
+        print(" == Searching second file handle")
         for potential_var in potential_vars:
             if potential_var in second_loaded.variables.keys():
                 var_name = potential_var
@@ -400,3 +403,4 @@ def guess_bounds(in_arr):
     bnds[-1, 1] = bnds[-2, 1] + delta
     bnds[0, 0] = bnds[1, 0] - delta
     return bnds
+

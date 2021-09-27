@@ -185,19 +185,16 @@ else:
     raise ValueError("Unknown model")
 
 if experiment == 'piControl':
-    base_file = '{:s}_{:s}_{:s}_{:s}_Annual_Regridded.pkl'.format(project, analogue_var, model, experiment)
+    base_file = '{:s}_{:s}_{:s}_{:s}_Annual.pkl'.format(project, analogue_var, model, experiment)
 else:
-    base_file = '{:s}_{:s}_{:s}_{:s}-{:s}_Annual_Regridded.pkl'.format(project, analogue_var, model, experiment, ens_mem)
+    base_file = '{:s}_{:s}_{:s}_{:s}-{:s}_Annual.pkl'.format(project, analogue_var, model, experiment, ens_mem)
 this_file = os.path.join(datadir, base_file)
 print("Attempting to read: {:s}".format(this_file))
 
 if os.path.isfile(this_file):
     with open(this_file, 'rb') as handle:
-        sst_in, year_in, seasonal_cycle = pickle.load(handle, encoding='latin') 
-        lat_in = np.arange(0,len(sst_in),1)	#np.arange(-89.5,89.5,1)
-        lon_in = np.arange(0,len(sst_in[0]),1)	#np.arange(-179.5,179.5,1)
-        print(lat_in)
-        nyrs = len(year_in)
+        sst_in, sst_ts_in, area_in, lon_in, lat_in, year_model_in = pickle.load(handle, encoding='latin')
+        nyrs = len(year_model_in)
         _, nj_hist, ni_hist = sst_in.shape
 else:
     raise ValueError("{:s} does not exist".format(this_file))
@@ -212,12 +209,12 @@ if concatenate_hist_with_fut:
             experiment_fut = 'rcp85'  # Just stick to RCP85/ssp585 for now
         elif project == 'CMIP6':
             experiment_fut = 'ssp585'
-        base_file_fut = '{:s}_{:s}_{:s}_{:s}-{:s}_Annual_Regridded.pkl'.format(project, analogue_var, model, experiment_fut, ens_mem)
+        base_file_fut = '{:s}_{:s}_{:s}_{:s}-{:s}_Annual.pkl'.format(project, analogue_var, model, experiment_fut, ens_mem)
         this_file_fut = os.path.join(datadir, base_file_fut)
 
         if os.path.isfile(this_file_fut):
             with open(this_file_fut, 'rb') as handle:
-                sst_fut_in, _, _, _, _, year_model_fut_in = pickle.load(handle)
+                sst_fut_in, _, _, _, _, year_model_fut_in = pickle.load(handle,encoding='latin')
                 _, nj_fut, ni_fut = sst_fut_in.shape
 
             if (nj_hist == nj_fut) and (ni_hist == ni_fut):
@@ -250,17 +247,17 @@ if concatenate_hist_with_fut:
 if residual:
     if analogue_var == 'SST':
         with open(hadisst_save_file_residual, 'rb') as handle:
-            target_sst_regridded, _, _, _, _, year_ann = pickle.load(handle)
+            target_sst_regridded, _, _, _, _, year_ann = pickle.load(handle,encoding='latin')
     elif analogue_var == 'DepthAverageT':
         with open(en4_save_file_residual, 'rb') as handle:
-            target_sst_regridded, _, _, _, _, year_ann = pickle.load(handle)
+            target_sst_regridded, _, _, _, _, year_ann = pickle.load(handle,encoding='latin')
 else:
     if analogue_var == 'SST':
         with open(hadisst_save_file, 'rb') as handle:
-            target_sst_regridded, _, _, _, _, year_ann = pickle.load(handle, encoding='latin')
+            target_sst_regridded, _, _, _, _, year_ann = pickle.load(handle,encoding='latin')
     elif analogue_var == 'DepthAverageT':
         with open(en4_save_file, 'rb') as handle:
-            target_sst_regridded, _, _, _, _, year_ann = pickle.load(handle)
+            target_sst_regridded, _, _, _, _, year_ann = pickle.load(handle,encoding='latin')
 
 # Make climatology for later
 t0 = np.argwhere(year_ann == clim_start)[0][0]
@@ -447,7 +444,7 @@ def find_climatology_for_model(model):
     climatology_file = os.path.join(datadir, 'CMIP_{:s}_{:s}_historical-EnsMn_TM{:d}-{:d}_Annual.pkl'.format(analogue_var, model, clim_start, clim_end))
     if os.path.isfile(climatology_file):
         with open(climatology_file, 'rb') as handle:
-            sst_clim = pickle.load(handle)
+            sst_clim = pickle.load(handle,encoding='latin')
     else:
         print("No climatology file exists, filling with missing data: {:s}".format(climatology_file))
         sst_clim = np.ma.masked_all(shape=(nj, ni))
@@ -457,10 +454,10 @@ def find_climatology_for_model(model):
 # Now finally process the data
 # ==================
 print('Padding MODEL data if required')
-sst_model, year_model = check_and_pad(sst_in, year_in)
+sst_model, year_model = check_and_pad(sst_in, year_model_in)
 
 print('Regridding MODEL {:s} map'.format(analogue_var))
-sst_regridded = sst_model	#regrid_sst(sst_model, year_model)
+sst_regridded = regrid_sst(sst_model, year_model)
 
 print('Masking MODEL {:s}'.format(analogue_var))
 sst_masked = mask_by_domain(sst_regridded, year_model)

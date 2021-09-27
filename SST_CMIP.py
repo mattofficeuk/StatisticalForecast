@@ -1,5 +1,4 @@
-#!/usr/bin/env python2.7
-
+#!/usr/bin/env python3
 # host = 'ciclad'
 host = 'jasmin'
 
@@ -7,7 +6,12 @@ import netCDF4
 import numpy as np
 import os
 import sys
-from numerics import find_nearest
+
+def find_nearest(array, value):
+    array = np.asarray(array)
+    idx = (np.abs(array - value)).argmin()
+    return array[idx]
+
 import pickle
 import glob
 from cmip import *
@@ -15,14 +19,14 @@ import time as time_module  # Because I use "time" elsewhere
 from scipy import interpolate
 
 if host == 'ciclad':
-    save_dir = '/home/users/mmenary/data/python_saves/CMIP_SST'
+    save_dir = '/home/users/lfbor/data/python_saves/CMIP_SST'
     # save_dir_netcdf = '/home/users/mmenary/data/python_saves/CMIP_SST_NetCDF'
-    list_location = '/home/mmenary/python/scripts'
+    list_location = '/home/lfbor/python/scripts'
 elif host == 'jasmin':
     # save_dir = '/gws/nopw/j04/acsis/mmenary/python_saves/CMIP_SST'
-    save_dir = '/work/scratch-nopw/mmenary/CMIP_SST'
+    save_dir = '/work/scratch-nopw/lborchert/CMIP_SST'
     # save_dir_netcdf = '/gws/nopw/j04/acsis/mmenary/python_saves/CMIP_SST_NetCDF'
-    list_location = '/home/users/mmenary/scripts'
+    list_location = '/home/users/lfbor/python/scripts'
 else:
     raise ValueError("Unknown host")
 
@@ -59,7 +63,7 @@ if testing == 'True':
 else:
     TESTING = False
 
-if TESTING: print "\n==========\nTESTING mode !!\n==========\n"
+if TESTING: print("\n==========\nTESTING mode !!\n==========\n")
 
 # ==================
 # Constants
@@ -126,7 +130,7 @@ else:
 
 dcppa = False
 if project == 'CMIP5':
-    print " == PROJECT=CMIP5"
+    print(" == PROJECT=CMIP5")
     if host == 'ciclad':
         base_path_data = base_path_coords = '/bdd/CMIP5/output'
     elif host == 'jasmin':
@@ -139,7 +143,7 @@ if project == 'CMIP5':
     thk_suffices = ['{:s}/fx/ocean/fx/r0i0p0/latest/deptho'.format(experiment)]
     Ofx_suffices = ['{:s}/fx/ocean/fx/r0i0p0/latest/areacello'.format(experiment)]
 else:
-    print " == PROJECT=CMIP6"
+    print(" == PROJECT=CMIP6")
     if experiment in ['piControl', 'historical']:
         if host == 'ciclad': base_path_data = '/bdd/CMIP6/CMIP'
         if host == 'jasmin': base_path_data = '/badc/cmip6/data/CMIP6/CMIP'
@@ -191,17 +195,17 @@ else:
     ens_mem_string = '-{:s}'.format(ens_mem)
 
 # save_file = '{:s}/{:s}_SST_{:s}_{:s}{:s}_Monthly{:s}.pkl'.format(save_dir, project, model, experiment, ens_mem_string, time_series_only_string)
-# save_file_ann = '{:s}/{:s}_SST_{:s}_{:s}{:s}_Annual{:s}.pkl'.format(save_dir, project, model, experiment, ens_mem_string, time_series_only_string)
-save_file_regridded = '{:s}/{:s}_SST_{:s}_{:s}{:s}_{:s}_Regridded{:s}.pkl'.format(save_dir, project, model, experiment, ens_mem_string, period_string, time_series_only_string)
+save_file_ann = '{:s}/{:s}_SST_{:s}_{:s}{:s}_Annual{:s}.pkl'.format(save_dir, project, model, experiment, ens_mem_string, time_series_only_string)
+# save_file_regridded = '{:s}/{:s}_SST_{:s}_{:s}{:s}_{:s}_Regridded{:s}.pkl'.format(save_dir, project, model, experiment, ens_mem_string, period_string, time_series_only_string)
 # netcdf_save_file = '{:s}/{:s}_SST_{:s}_{:s}{:s}_Annual{:s}.nc'.format(save_dir_netcdf, project, model, experiment, ens_mem_string, time_series_only_string)
 if TESTING:
     # save_file += '.TEST'
-    # save_file_ann += '.TEST'
-    save_file_regridded += '.TEST'
+    save_file_ann += '.TEST'
+    # save_file_regridded += '.TEST'
     # netcdf_save_file += '.TEST'
 
 # print "Will save to:\n{:s}\n{:s}\n{:s}\n{:s}\n".format(save_file, save_file_ann, save_file_regridded, netcdf_save_file)
-print "Will save to: {:s}".format(save_file_regridded)
+print("Will save to: {:s}".format(save_file_ann))
 
 # ==================
 # Find the institute associated with the input model
@@ -250,17 +254,17 @@ lat = loaded.variables[lat_name][:]
 loaded.close()
 
 if lon.ndim == lon_bnds_vertices.ndim:  # When the vertices are missing a dimension
-    print " == Inflating lon_bnds dimension as it is (wrongly) missing j-coords for: {:s}".format(model)
+    print(" == Inflating lon_bnds dimension as it is (wrongly) missing j-coords for: {:s}".format(model))
     nj, ni = lon.shape  # Must have 2D by definition
     lon_bnds_vertices = np.repeat(lon_bnds_vertices[np.newaxis, :, :], nj, axis=0)
 
 if lat.ndim == lat_bnds_vertices.ndim:  # When the vertices are missing a dimension
-    print " == Inflating lat_bnds dimension as it is (wrongly) missing i-coords for: {:s}".format(model)
+    print(" == Inflating lat_bnds dimension as it is (wrongly) missing i-coords for: {:s}".format(model))
     nj, ni = lon.shape  # Must have 2D by definition
     lat_bnds_vertices = np.repeat(lat_bnds_vertices[:, np.newaxis, :], ni, axis=1)
 
 if lon.ndim < 2:
-    print " == Converting coordinates to 2D for {:s}".format(model)
+    print(" == Converting coordinates to 2D for {:s}".format(model))
     nj = len(lat)
     ni = len(lon)
     lon = np.repeat(lon[np.newaxis, :], nj, axis=0)
@@ -283,7 +287,7 @@ for ifile, thetao_file in enumerate(thetao_files):
     time = loaded.variables['time'][:]
     ntimes_total += len(time)
 
-ntimes_total = long(np.min([ntimes_total, 12 * 500]))  # Max 500 years (memory)
+ntimes_total = int(np.min([ntimes_total, 12 * 500]))  # Max 500 years (memory)
 
 nj, ni = lon.shape
 sst = np.ma.masked_all(shape=(ntimes_total, nj, ni))
@@ -297,24 +301,24 @@ mon = np.ma.masked_all(shape=(ntimes_total))
 tt2 = 0
 for ifile, thetao_file in enumerate(thetao_files):
     if exit_loops: break
-    print thetao_file
+    print(thetao_file)
     loaded = netCDF4.Dataset(thetao_file)
 
     time = loaded.variables['time'][:]
     ntimes = len(time)
 
     t0, t1 = os.path.basename(thetao_file).split('_')[-1].split('.nc')[0].split('-')
-    y0, y1 = long(t0[:4]), long(t1[:4])
-    m0, m1 = long(t0[4:]), long(t1[4:])
+    y0, y1 = int(t0[:4]), int(t1[:4])
+    m0, m1 = int(t0[4:]), int(t1[4:])
 
     for tt in range(ntimes):
         if exit_loops: break
-        print "{:4d} of {:4d} in this file, {:4d} of {:4d} overall".format(tt, ntimes, tt2, ntimes_total)
+        print("{:4d} of {:4d} in this file, {:4d} of {:4d} overall".format(tt, ntimes, tt2, ntimes_total))
         thetao = loaded.variables['thetao'][tt, 0, :, :]
 
         peak_to_peak = thetao.ptp()
         if peak_to_peak < 0.1:
-            print "WARNING: This data looks to all be missing/0"
+            print("WARNING: This data looks to all be missing/0")
             continue
 
         if model in ['GISS-E2-1-H', 'GISS-E2-H', 'MIROC5', 'GISS-E2-R']:
@@ -386,6 +390,7 @@ for ifile, thetao_file in enumerate(thetao_files):
         sst[tt2, :, :] = thetao_masked - kelvin_offset
         sst_global[tt2, :, :] = thetao_global - kelvin_offset
 
+
         year[tt2] = y0 + (tt // 12)
         mon[tt2] = m0 + (tt % 12)
         tt2 += 1
@@ -404,7 +409,7 @@ time = year + (mon - 1) / 12.
 # ==================
 sst_ts = {}
 for region in regions:
-    print "Making SST average for {:s}".format(region)
+    print("Making SST average for {:s}".format(region))
     if region in ['global', 'global60', 'nh']:
         sst_ts[region] = make_ts_2d(sst_global, lon, lat, area, region)
     else:
@@ -440,6 +445,7 @@ for iyr, yy in enumerate(year_ann):
         sst_ann[iyr * nseasons + iseason, :, :] = sst_global[ind, :, :].mean(axis=0)
         for region in regions:
             sst_ts_ann[region][iyr * nseasons + iseason] = sst_ts[region][ind].mean(axis=0)
+
 
 # ==================
 # Do some regridding
@@ -489,31 +495,32 @@ sst_regridded = np.ma.array(sst_regridded, mask=np.repeat(mask_regridded[np.newa
 # ==================
 # Save the data (annual version only?)
 # ==================
-# with open(save_file_ann, 'wb') as handle:
-#     print "Saving SST data: {:s}".format(save_file_ann)
-#     print sst_ann.shape, area.shape, lon.shape, lat.shape, year_ann.shape
-#     if time_series_only:
-#         pickle.dump([sst_ts_ann, year_ann], handle, protocol=pickle.HIGHEST_PROTOCOL)
-#     else:
-#         if seasonal:
-#             pickle.dump([sst_ann, sst_ts_ann, area, lon, lat, year_ann, season], handle, protocol=pickle.HIGHEST_PROTOCOL)
-#         else:
-#             pickle.dump([sst_ann, sst_ts_ann, area, lon, lat, year_ann], handle, protocol=pickle.HIGHEST_PROTOCOL)
-#     print "DONE!"
+with open(save_file_ann, 'wb') as handle:
+    print("Saving SST data: {:s}".format(save_file_ann))
+    print(sst_ann.shape, area.shape, lon.shape, lat.shape, year_ann.shape)
+    if time_series_only:
+        pickle.dump([sst_ts_ann, year_ann], handle, protocol=pickle.HIGHEST_PROTOCOL)
+    else:
+        if seasonal:
+            pickle.dump([sst_ann, sst_ts_ann, area, lon, lat, year_ann, season], handle, protocol=pickle.HIGHEST_PROTOCOL)
+        else:
+            pickle.dump([sst_ann, sst_ts_ann, area, lon, lat, year_ann], handle, protocol=pickle.HIGHEST_PROTOCOL)
+    print("DONE!")
 
 # ==================
 # Save the data (annual version only?)
 # ==================
-if not time_series_only:
-    with open(save_file_regridded, 'wb') as handle:
-        print "Saving SST data: {:s}".format(save_file_regridded)
-        print sst_regridded.shape, year_ann.shape, seasonal_cycle.shape
-        pickle.dump([sst_regridded, year_ann, seasonal_cycle], handle, protocol=pickle.HIGHEST_PROTOCOL)
-        print "DONE!"
+#if not time_series_only:
+#    with open(save_file_regridded, 'wb') as handle:
+#        print("Saving SST data: {:s}".format(save_file_regridded))
+#        print(sst_regridded.shape, year_ann.shape, seasonal_cycle.shape)
+#        pickle.dump([sst_regridded, year_ann, seasonal_cycle], handle, protocol=pickle.HIGHEST_PROTOCOL)
+#        print("DONE!")
 
 # if save_netcdfs:
 #     print "Saving SST data: {:s}".format(netcdf_save_file)
 #     save_to_netcdf(netcdf_save_file, sst_ts_ann['spg_leo20'], year_ann)
 #     print "DONE!"
 
-print "Program finished sucessfully"
+print("Program finished sucessfully")
+

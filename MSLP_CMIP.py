@@ -7,7 +7,12 @@ import netCDF4
 import numpy as np
 import os
 import sys
-from numerics import find_nearest
+
+def find_nearest(array, value):
+    array = np.asarray(array)
+    idx = (np.abs(array - value)).argmin()
+    return array[idx]
+
 import pickle
 import glob
 from cmip import *
@@ -15,12 +20,12 @@ import time as time_module  # Because I use "time" elsewhere
 from scipy import interpolate
 
 if host == 'ciclad':
-    save_dir = '/data/mmenary/python_saves/CMIP_MSLP'
-    list_location = '/home/mmenary/python/scripts'
+    save_dir = '/data/lborchert/python_saves/CMIP_MSLP'
+    list_location = '/home/lborchert/python/scripts'
 elif host == 'jasmin':
     #save_dir = '/gws/nopw/j04/acsis/mmenary/python_saves/CMIP_MSLP'
-    save_dir = '/work/scratch-nopw/mmenary/CMIP_MSLP'
-    list_location = '/home/users/mmenary/scripts'
+    save_dir = '/work/scratch-nopw/lborchert/CMIP_MSLP'
+    list_location = '/home/users/lborchert/scripts'
 else:
     raise ValueError("Unknown host")
 
@@ -57,7 +62,7 @@ if testing == 'True':
 else:
     TESTING = False
 
-if TESTING: print "\n==========\nTESTING mode !!\n==========\n"
+if TESTING: print("\n==========\nTESTING mode !!\n==========\n")
 
 # ==================
 # Constants
@@ -120,7 +125,7 @@ else:
 
 dcppa = False
 if project == 'CMIP5':
-    print " == PROJECT=CMIP5"
+    print(" == PROJECT=CMIP5")
     if host == 'ciclad':
         base_path_data = base_path_coords = '/bdd/CMIP5/output'
     elif host == 'jasmin':
@@ -129,7 +134,7 @@ if project == 'CMIP5':
     # thk_suffices = ['{:s}/fx/atmos/fx/r0i0p0/latest/deptho'.format(experiment)]
     fx_suffices = ['{:s}/fx/atmos/fx/r0i0p0/latest/areacella'.format(experiment)]
 else:
-    print " == PROJECT=CMIP6"
+    print(" == PROJECT=CMIP6")
     if experiment in ['piControl', 'historical']:
         if host == 'ciclad': base_path_data = '/bdd/CMIP6/CMIP'
         if host == 'jasmin': base_path_data = '/badc/cmip6/data/CMIP6/CMIP'
@@ -189,7 +194,7 @@ if TESTING:
     save_file_regridded += '.TEST'
 
 # print "Will save to:\n{:s}\n{:s}\n{:s}\n".format(save_file, save_file_ann, save_file_regridded)
-print "Will save to: {:s}".format(save_file_regridded)
+print("Will save to: {:s}".format(save_file_regridded))
 
 # ==================
 # Find the institute associated with the input model
@@ -239,13 +244,13 @@ if area_pointer:
     area = area_pointer.variables[area_name][:]
 
     if lon.ndim < 2:
-        print " == Converting coordinates to 2D for {:s}".format(model)
+        print(" == Converting coordinates to 2D for {:s}".format(model))
         nj = len(lat)
         ni = len(lon)
         lon = np.repeat(lon[np.newaxis, :], nj, axis=0)
         lat = np.repeat(lat[:, np.newaxis], ni, axis=1)
 else:
-    print " -++- NO AREA DATA -++-"
+    print(" -++- NO AREA DATA -++-")
     if lon_bnds_pointer:
         lon_bnds_vertices = lon_bnds_pointer.variables[lon_bnds_name][:]
     else:
@@ -256,17 +261,17 @@ else:
         lat_bnds_vertices = guess_bounds(lat)
 
     if lon.ndim == lon_bnds_vertices.ndim:  # When the vertices are missing a dimension
-        print " == Inflating lon_bnds dimension as it is (wrongly) missing j-coords for: {:s}".format(model)
+        print(" == Inflating lon_bnds dimension as it is (wrongly) missing j-coords for: {:s}".format(model))
         nj, ni = lon.shape  # Must have 2D by definition
         lon_bnds_vertices = np.repeat(lon_bnds_vertices[np.newaxis, :, :], nj, axis=0)
 
     if lat.ndim == lat_bnds_vertices.ndim:  # When the vertices are missing a dimension
-        print " == Inflating lat_bnds dimension as it is (wrongly) missing i-coords for: {:s}".format(model)
+        print(" == Inflating lat_bnds dimension as it is (wrongly) missing i-coords for: {:s}".format(model))
         nj, ni = lon.shape  # Must have 2D by definition
         lat_bnds_vertices = np.repeat(lat_bnds_vertices[:, np.newaxis, :], ni, axis=1)
 
     if lon.ndim < 2:
-        print " == Converting coordinates to 2D for {:s}".format(model)
+        print(" == Converting coordinates to 2D for {:s}".format(model))
         nj = len(lat)
         ni = len(lon)
         lon = np.repeat(lon[np.newaxis, :], nj, axis=0)
@@ -308,7 +313,7 @@ tt2 = 0
 exit_loops = False
 for ifile, psl_file in enumerate(psl_files):
     if exit_loops: break
-    print psl_file
+    print(psl_file)
     loaded = netCDF4.Dataset(psl_file)
 
     time = loaded.variables['time'][:]
@@ -320,12 +325,12 @@ for ifile, psl_file in enumerate(psl_files):
 
     for tt in range(ntimes):
         if exit_loops: break
-        print "{:4d} of {:4d} in this file, {:4d} of {:4d} overall".format(tt, ntimes, tt2, ntimes_total)
+        print("{:4d} of {:4d} in this file, {:4d} of {:4d} overall".format(tt, ntimes, tt2, ntimes_total))
         psl = loaded.variables['psl'][tt, :, :]
 
         peak_to_peak = psl.ptp()
         if peak_to_peak < 0.1:
-            print "WARNING: This data looks to all be missing/0"
+            print("WARNING: This data looks to all be missing/0")
             continue
 
         # if model in ['GISS-E2-1-H', 'GISS-E2-H', 'GISS-E2-R']:
@@ -391,7 +396,7 @@ for ifile, psl_file in enumerate(psl_files):
         #
         # Make masked lon and dlon (one time only) and check if data is in Kelvin
         if ifile == 0 and tt == 0:
-            print "Doing 1-time-only things"
+            print("Doing 1-time-only things")
             if not area_pointer:
                 xdist = arc_length(lon_bnds_vertices, lat_bnds_vertices)
                 # xdist_global = np.ma.array(xdist, mask=psl_global.mask)
@@ -444,7 +449,7 @@ time = year + (mon - 1) / 12.
 difference_regions = ['nao1']
 mslp_ts = {}
 for region in regions:
-    print "Making MSLP average for {:s}".format(region)
+    print("Making MSLP average for {:s}".format(region))
     if region in difference_regions:
         mslp_ts[region] = make_ts_diff(mslp, lon, lat, region)
     else:
@@ -518,9 +523,9 @@ if not time_series_only:
 # ==================
 if not time_series_only:
     with open(save_file_regridded, 'wb') as handle:
-        print "Saving MSLP data: {:s}".format(save_file_regridded)
-        print mslp_regridded.shape, year_ann.shape, seasonal_cycle.shape
+        print("Saving MSLP data: {:s}".format(save_file_regridded))
+        print(mslp_regridded.shape, year_ann.shape, seasonal_cycle.shape)
         pickle.dump([mslp_regridded, year_ann, seasonal_cycle], handle, protocol=pickle.HIGHEST_PROTOCOL)
-        print "DONE!"
+        print("DONE!")
 
-print "Program finished sucessfully"
+print("Program finished sucessfully")
