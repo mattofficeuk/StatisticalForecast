@@ -39,14 +39,14 @@ if 'ciclad' in myhost:
 else:
     # Jasmin options
     #datadir = '/gws/nopw/j04/acsis/mmenary/python_saves/CMIP_{:s}/'.format(analogue_var)
-    datadir = '/work/scratch-nopw/{.s}/CMIP_{:s}/'.format(usr, analogue_var)
+    datadir = '/work/scratch-nopw/{}/CMIP_{:s}/'.format(usr, analogue_var)
     #processed_output_dir = '/gws/nopw/j04/acsis/mmenary/python_saves/AnalogueCache/'
-    processed_output_dir = '/work/scratch-nopw/{.s}/AnalogueCache'.format(usr)
-    scripts_dir = '/home/users/{.s}/python/scripts/'.format(usr)
-    hadisst_save_file = '/home/users/{.s}/data/HadISST_AnnualMapCMIPStyleRegridded.pkl'.format(usr)
-    hadisst_save_file_residual = '/home/users/{.s}/data/HadISST_AnnualMapCMIPStyleRegridded_Residual.pkl'.format(usr)
-    en4_save_file = '/home/users/{.s}/data/EN4_0-500m_AnnualMapCMIPStyleRegridded.pkl'.format(usr)
-    en4_save_file_residual = '/home/users/{.s}/data/EN4_0-500m_AnnualMapCMIPStyleRegridded_Residual.pkl'.format(usr)  # Not made yet
+    processed_output_dir = '/work/scratch-nopw/{}/AnalogueCache'.format(usr)
+    scripts_dir = '/home/users/{}/python/scripts/'.format(usr)
+    hadisst_save_file = '/home/users/{}/data/HadISST_AnnualMapCMIPStyleRegridded.pkl'.format(usr)
+    hadisst_save_file_residual = '/home/users/{}/data/HadISST_AnnualMapCMIPStyleRegridded_Residual.pkl'.format(usr)
+    en4_save_file = '/home/users/{}/data/EN4_0-500m_AnnualMapCMIPStyleRegridded.pkl'.format(usr)
+    en4_save_file_residual = '/home/users/{}/data/EN4_0-500m_AnnualMapCMIPStyleRegridded_Residual.pkl'.format(usr)  # Not made yet
 
 def read_target_domain(in_string):
     out_list = []

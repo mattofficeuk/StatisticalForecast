@@ -26,8 +26,8 @@ if host == 'ciclad':
     list_location = '/home/{.s}/python/scripts'.format(usr)
 elif host == 'jasmin':
     #save_dir = '/gws/nopw/j04/acsis/mmenary/python_saves/CMIP_MSLP'
-    save_dir = '/work/scratch-nopw/{.s}/CMIP_MSLP'.format(usr)
-    list_location = '/home/users/{.s}/scripts'.format(usr)
+    save_dir = '/work/scratch-nopw/{}/CMIP_MSLP'.format(usr)
+    list_location = '/home/users/{}/scripts'.format(usr)
 else:
     raise ValueError("Unknown host")
 
