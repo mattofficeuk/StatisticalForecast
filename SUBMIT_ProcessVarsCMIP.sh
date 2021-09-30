@@ -12,12 +12,14 @@ typeset -l choice  # To ignore case
 choice=$1
 
 # Jasmin
-scripts_dir=/home/users/${usr}/python/scripts
+scripts_dir=`pwd`  ## Assume we are running this from the same location as the other scripts
 output_dir=/work/scratch-nopw/${usr}/output
 datadir=/work/scratch-nopw/${usr}/CMIP_${var}
 runscript=${scripts_dir}/${var}_CMIP.py
 queue="short-serial"
 max_jobs=5000
+
+echo "Running based on scripts in: ${scripts_dir}"
 
 # Updated list, created by doing: ls -d */* | cut -f2 --delim='/' | uniq > ~/python/scripts/cmip5_list.txt
 if [[ $choice == 'cmip5' ]]
