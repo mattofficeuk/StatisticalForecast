@@ -8,7 +8,9 @@ Code and instructions for making analogue/statistical forecasts using CMIP5/6 da
 ## Short term future plans
 1. Should the intermediate files, which are currently Python pickle files, be something more interoperable? Perhaps it would be good to be able to store the VERSION number of the code that created the files in the files themselves
 2. A script to `touch` the temporary files on Jasmin so we don't have to keep recreating them (they are auto-deleted after 1 month)
-3. ...
+3. Develop a structuring approach to set up directories in the program
+4. Include a 'testing' function for the scripts to enable quick development and trouble shooting
+5. ...
 
 ## Mid term plans
 1. A way of running the system backwards - e.g. in order to estimate which variables/regions would have been most useful for a particular forecasts. To then try and understand *why* that would be in order to design a better forward forecast system. Have to be careful not to cheat though.
