@@ -4,15 +4,17 @@ echo "Beginning loops!"
 
 var=SST
 cursory_initial_check="True"
+echo $USER
+usr=$USER
 
 # This can be PICON (for CMIP5+6 combined), CMIP5, CMIP6, DAMIP6
 typeset -l choice  # To ignore case
 choice=$1
 
 # Jasmin
-scripts_dir=/home/users/lfbor/python/scripts
-output_dir=/work/scratch-nopw/lborchert/output
-datadir=/work/scratch-nopw/lborchert/CMIP_${var}
+scripts_dir=/home/users/${usr}/python/scripts
+output_dir=/work/scratch-nopw/${usr}/output
+datadir=/work/scratch-nopw/${usr}/CMIP_${var}
 runscript=${scripts_dir}/${var}_CMIP.py
 queue="short-serial"
 max_jobs=5000

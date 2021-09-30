@@ -63,6 +63,8 @@ else:
 myhost = os.uname()[1]
 print("myhost = {:s}".format(myhost))
 
+usr = os.environ["USER"]
+
 if 'ciclad' in myhost:
     # Ciclad options
     forecast_datadir = '/data/mmenary/python_saves/CMIP_{:s}/'.format(forecast_var)
@@ -74,13 +76,13 @@ if 'ciclad' in myhost:
     hadcrut4_save_file = '/data/mmenary/python_saves/HadCRUT4_time_series_regions.pkl'
 else:
     # Jasmin options
-    forecast_datadir = '/work/scratch-nopw/lborchert/CMIP_{:s}/'.format(forecast_var)
-    analogue_datadir = '/work/scratch-nopw/lborchert/CMIP_{:s}/'.format(analogue_var)
-    processed_output_dir = '/work/scratch-nopw/lborchert/AnalogueCache'
-    scripts_dir = '/home/users/lfbor/python/scripts/'
-    hadisst_save_file = '/home/users/lfbor/data/HadISST_time_series_regions.pkl'
-    en4_save_file = '/home/users/lfbor/data/EN4_0-500m_time_series_regions.pkl'
-    hadcrut4_save_file = '/home/users/lfbor/data/HadCRUT4_time_series_regions.pkl'
+    forecast_datadir = '/work/scratch-nopw/{.s}/CMIP_{:s}/'.format(usr, forecast_var)
+    analogue_datadir = '/work/scratch-nopw/{.s}/CMIP_{:s}/'.format(usr, analogue_var)
+    processed_output_dir = '/work/scratch-nopw/{.s}/AnalogueCache'.format(usr)
+    scripts_dir = '/home/users/{.s}/python/scripts/'.format(usr)
+    hadisst_save_file = '/home/users/{.s}/data/HadISST_time_series_regions.pkl'.format(usr)
+    en4_save_file = '/home/users/{.s}/data/EN4_0-500m_time_series_regions.pkl'.format(usr)
+    hadcrut4_save_file = '/home/users/{.s}/data/HadCRUT4_time_series_regions.pkl'.format(usr)
 
 if (clim_start != 1960) or (clim_end != 1990):
     processed_output_dir += '_{:d}-{:d}'.format(clim_start, clim_end)

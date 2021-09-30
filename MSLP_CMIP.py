@@ -8,6 +8,8 @@ import numpy as np
 import os
 import sys
 
+usr = os.environ["USER"]
+
 def find_nearest(array, value):
     array = np.asarray(array)
     idx = (np.abs(array - value)).argmin()
@@ -20,12 +22,12 @@ import time as time_module  # Because I use "time" elsewhere
 from scipy import interpolate
 
 if host == 'ciclad':
-    save_dir = '/data/lborchert/python_saves/CMIP_MSLP'
-    list_location = '/home/lborchert/python/scripts'
+    save_dir = '/data/{.s}/python_saves/CMIP_MSLP'.format(usr)
+    list_location = '/home/{.s}/python/scripts'.format(usr)
 elif host == 'jasmin':
     #save_dir = '/gws/nopw/j04/acsis/mmenary/python_saves/CMIP_MSLP'
-    save_dir = '/work/scratch-nopw/lborchert/CMIP_MSLP'
-    list_location = '/home/users/lborchert/scripts'
+    save_dir = '/work/scratch-nopw/{.s}/CMIP_MSLP'.format(usr)
+    list_location = '/home/users/{.s}/scripts'.format(usr)
 else:
     raise ValueError("Unknown host")
 

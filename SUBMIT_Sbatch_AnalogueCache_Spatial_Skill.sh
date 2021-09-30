@@ -10,10 +10,13 @@ pass_number="1"
 remake_saves="True"
 testing="False"
 
+echo $USER
+usr=$USER
+
 # Jasmin
-output_dir=/work/scratch-nopw/lborchert/output3
-scripts_dir=/home/users/lfbor/python/scripts
-analogue_datadir_in=/work/scratch-nopw/lborchert/AnalogueCache
+output_dir=/work/scratch-nopw/${usr}/output3
+scripts_dir=/home/users/${usr}/python/scripts
+analogue_datadir_in=/work/scratch-nopw/${usr}/AnalogueCache
 runscript=${scripts_dir}/AnalogueCache_Spatial_Skill_nonregrid.py
 queue="short-serial"
 #queue="long-serial"  # NOTE ALSO TIME CHANGED TO 168 IN SUBMIT!
