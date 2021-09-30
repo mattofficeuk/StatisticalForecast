@@ -2,9 +2,8 @@
 Code and instructions for making analogue/statistical forecasts using CMIP5/6 data
 
 ## Things currently being worked on
-1. MATT - Update this document with ongoing work and future plans
-2. MATT - Check out latest version and confirm I can get it (re)working on Jasmin
-3. LEO - Separate out as much as possible the metric used to choose the analogues. In order to allow us to make progress (see below) by defining newer, better metrics
+1. MATT - Check out latest version and confirm I can get it (re)working on Jasmin
+2. LEO - Separate out as much as possible the metric used to choose the analogues. In order to allow us to make progress (see below) by defining newer, better metrics
 
 ## Short term future plans
 1. Should the intermediate files, which are currently Python pickle files, be something more interoperable? Perhaps it would be good to be able to store the VERSION number of the code that created the files in the files themselves
