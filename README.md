@@ -2,10 +2,9 @@
 Code and instructions for making analogue/statistical forecasts using CMIP5/6 data
 
 ## Things currently being worked on
-1. DONE LEO - Abstract out file paths into an initialisation file so it is easier to run as a different user. Could we make it automatic based on your username?
-2. MATT - Update this document with ongoing work and future plans
-3. MATT - Check out latest version and confirm I can get it (re)working on Jasmin
-4. LEO - Separate out as much as possible the metric used to choose the analogues. In order to allow us to make progress (see below) by defining newer, better metrics
+1. MATT - Update this document with ongoing work and future plans
+2. MATT - Check out latest version and confirm I can get it (re)working on Jasmin
+3. LEO - Separate out as much as possible the metric used to choose the analogues. In order to allow us to make progress (see below) by defining newer, better metrics
 
 ## Short term future plans
 1. Should the intermediate files, which are currently Python pickle files, be something more interoperable? Perhaps it would be good to be able to store the VERSION number of the code that created the files in the files themselves
@@ -21,6 +20,9 @@ Code and instructions for making analogue/statistical forecasts using CMIP5/6 da
 ## Long term targets
 1. A flexible system where you can specify a (set of) (CMIP) variables/regions/timescales as predictors and make forecasts of another user-specified variable/region over timescales also specified by the user. In addition, the ability to plug-and-play different methods for choosing the analogues (e.g. RMSE difference; correlation patterns; combinations of these)
 2. The ability to use more advanced ML methods to pick the analogues, such as CNNs targetted at specific regions (e.g. North Atlantic SSTs)
+
+## Finished tasks
+1. DONE LEO - Abstract out file paths into an initialisation file so it is easier to run as a different user. Could we make it automatic based on your username?
 
 ## Very general workflow
 1. Run `SUBMIT_ProcessVarsCMIP.sh` with some input (e.g. `cmip6` ) to create the pre-processed data
