@@ -54,6 +54,9 @@ def read_target_domain(in_string):
         out_list.append(np.int(in_string[ii*3:(ii+1)*3]))
     return out_list
 
+sys.path.append(os.path.join(scripts_dir, 'selection.py'))
+import selection
+
 # ==============
 # Constants we're reading in
 # ==============
@@ -392,30 +395,30 @@ def mask_coasts(in_arr, n_cells=2):
     # This might not be necessary if we smooth
     pass
 
-def calc_rmse(aa, bb):
-    return np.sqrt(np.ma.mean((aa - bb)**2))
+#def calc_rmse(aa, bb):
+#    return np.sqrt(np.ma.mean((aa - bb)**2))
 
-def compute_spatial_correlation(sst_obs, year_obs, sst_model, year_model):
-    nyrs_obs = len(year_obs)
-    nyrs_model = len(year_model)
-    corr = np.ma.masked_all(shape=(nyrs_obs, nyrs_model))
-    for tt_t, year_t in enumerate(year_obs):
-        print('{:d}/{:d}'.format(tt_t, nyrs_obs))
-        for tt_m, year_m in enumerate(year_model):
+#def compute_spatial_correlation(sst_obs, year_obs, sst_model, year_model):
+#    nyrs_obs = len(year_obs)
+#    nyrs_model = len(year_model)
+#    corr = np.ma.masked_all(shape=(nyrs_obs, nyrs_model))
+#    for tt_t, year_t in enumerate(year_obs):
+#        print('{:d}/{:d}'.format(tt_t, nyrs_obs))
+#        for tt_m, year_m in enumerate(year_model):
 #            if tt_m not in [50, 99]: continue
-            obs_data = sst_obs[tt_t, :, :].flatten()
-            model_data = sst_model[tt_m, :, :].flatten()
-            real = np.nonzero(obs_data  * model_data)
-            if len(real[0]) < 5:
-                continue
-            if method == 'RMSE':
+#            obs_data = sst_obs[tt_t, :, :].flatten()
+#            model_data = sst_model[tt_m, :, :].flatten()
+#            real = np.nonzero(obs_data  * model_data)
+#            if len(real[0]) < 5:
+#                continue
+#            if method == 'RMSE':
                 # Not actually RMSE, but we need high values to be better
-                this_corr = 1. / calc_rmse(obs_data[real], model_data[real])
-            else:
-                this_corr = np.corrcoef(obs_data[real], model_data[real])[0][1]
-            corr[tt_t, tt_m] = this_corr
+#                this_corr = 1. / calc_rmse(obs_data[real], model_data[real])
+#            else:
+#                this_corr = np.corrcoef(obs_data[real], model_data[real])[0][1]
+#            corr[tt_t, tt_m] = this_corr
 
-    return corr
+#    return corr
 
 def check_and_pad(sst_in, year_in):
     diff = year_in[1:] - year_in[:-1]
@@ -528,10 +531,10 @@ if smoothing >  1:
     sst_masked_mean_anom = smooth(sst_masked_mean_anom)
 
 print("Computing spatial correlation (of annual means)")
-corr_ann = compute_spatial_correlation(target_masked_mean_anom, year_ann, sst_masked_mean_anom, year_model)
+corr_ann = selection.csc(method, target_masked_mean_anom, year_ann, sst_masked_mean_anom, year_model)
 
 print("Computing spatial correlation (of trends)")
-corr_trend = compute_spatial_correlation(target_masked_trend, year_ann, sst_masked_trend, year_model)
+corr_trend = selection.csc(method, target_masked_trend, year_ann, sst_masked_trend, year_model)
 
 print("Attempting to open file for writing:  {:s}".format(processed_file))
 with open(processed_file, 'wb') as handle:
