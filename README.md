@@ -5,6 +5,7 @@ Code and instructions for making analogue/statistical forecasts using CMIP5/6 da
 1. MATT - Check out latest version and confirm I can get it (re)working on Jasmin
 2. MATT - Develop a structuring approach to set up directories in the program
 3. LEO - Should the intermediate files, which are currently Python pickle files, be something more interoperable? Perhaps it would be good to be able to store the VERSION number of the code that created the files in the files themselves
+4. MATT - AnalyseAnalogueSource2_Jasmin.py is still in the original format and hardcoded to Matt's paths etc. Make generic.
 
 ## Short term future plans
 1. A script to `touch` the temporary files on Jasmin so we don't have to keep recreating them (they are auto-deleted after 1 month)
