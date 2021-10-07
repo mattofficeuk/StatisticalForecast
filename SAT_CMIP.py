@@ -22,12 +22,13 @@ import time as time_module  # Because I use "time" elsewhere
 from scipy import interpolate
 
 if host == 'ciclad':
+    raise ValueError("deprecated")
     save_dir = '/data/{.s}/python_saves/CMIP_SAT'.format(usr)
-    list_location = '/home/{.s}/python/scripts'.format(usr)
+    # list_location = '/home/{.s}/python/scripts'.format(usr)
 elif host == 'jasmin':
     #save_dir = '/gws/nopw/j04/acsis/mmenary/python_saves/CMIP_SAT'
     save_dir = '/work/scratch-nopw/{}/CMIP_SAT'.format(usr)
-    list_location = '/home/users/{}/python/scripts'.format(usr)
+    # list_location = '/home/users/{}/python/scripts'.format(usr)
 else:
     raise ValueError("Unknown host")
 
@@ -40,6 +41,7 @@ model = sys.argv[3]
 period_string = sys.argv[4]
 time_series_only = sys.argv[5]
 testing = sys.argv[6]
+list_location = sys.argv[7]
 
 print('Inputs: ', sys.argv)
 
@@ -525,4 +527,3 @@ if not time_series_only:
         print("DONE!")
 
 print("Program finished sucessfully")
-

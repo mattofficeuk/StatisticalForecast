@@ -22,6 +22,7 @@ import time as time_module  # Because I use "time" elsewhere
 from scipy import interpolate
 
 if host == 'ciclad':
+    raise ValueError("deprecated")
     save_dir = '/data/{.s}/python_saves/CMIP_MSLP'.format(usr)
     list_location = '/home/{.s}/python/scripts'.format(usr)
 elif host == 'jasmin':
@@ -40,6 +41,7 @@ model = sys.argv[3]
 period_string = sys.argv[4]
 time_series_only = sys.argv[5]
 testing = sys.argv[6]
+list_location = sys.argv[7]
 
 print('Inputs: ', sys.argv)
 

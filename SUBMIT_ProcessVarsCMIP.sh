@@ -96,6 +96,13 @@ then
         var_cmip="psl"
 fi
 
+requiredDirectories="$output_dir $datadir"
+for requiredDirectory in $requiredDirectories
+do
+  echo $requiredDirectory
+  mkdir -p $requiredDirectory
+done
+
 while read model
 do
         echo $model
@@ -161,7 +168,7 @@ do
 
                         ${scripts_dir}/queue_spacer_sbatch.sh $max_jobs  # This will check every 120s if I have less than 100 jobs in the Q
 
-                        cmd="sbatch -p $queue -t 6:00:00 -n 1 -o ${output} -e ${error} ${runscript} ${experiment} ${ens_mem} ${model} ${period} ${time_series_only} ${testing}"
+                        cmd="sbatch -p $queue -t 6:00:00 -n 1 -o ${output} -e ${error} ${runscript} ${experiment} ${ens_mem} ${model} ${period} ${time_series_only} ${testing} ${scripts_dir}"
                         echo $cmd
 
                         $cmd
@@ -175,4 +182,3 @@ do
 done < $model_list
 
 echo "Submit script finished"
-

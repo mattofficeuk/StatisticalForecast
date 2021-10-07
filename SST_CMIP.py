@@ -21,14 +21,14 @@ import time as time_module  # Because I use "time" elsewhere
 from scipy import interpolate
 
 if host == 'ciclad':
+    raise ValueError("This is now deprecated")
     save_dir = '/home/users/{}/data/python_saves/CMIP_SST'.format(usr)
     # save_dir_netcdf = '/home/users/mmenary/data/python_saves/CMIP_SST_NetCDF'
-    list_location = '/home/{}/python/scripts'.format(usr)
+    # list_location = '/home/{}/python/scripts'.format(usr)
 elif host == 'jasmin':
     # save_dir = '/gws/nopw/j04/acsis/mmenary/python_saves/CMIP_SST'
     save_dir = '/work/scratch-nopw/{}/CMIP_SST'.format(usr)
     # save_dir_netcdf = '/gws/nopw/j04/acsis/mmenary/python_saves/CMIP_SST_NetCDF'
-    list_location = '/home/users/{}/python/scripts'.format(usr)
 else:
     raise ValueError("Unknown host")
 
@@ -41,6 +41,7 @@ model = sys.argv[3]
 period_string = sys.argv[4]
 time_series_only = sys.argv[5]
 testing = sys.argv[6]
+list_location = sys.argv[7]
 
 print('Inputs: ', sys.argv)
 
@@ -51,6 +52,8 @@ elif period_string == 'Annual':
     seasonal = False
 else:
     raise ValueError('period_string unknown')
+if not os.path.isdir(save_dir):
+    os.makedirs(save_dir)
 
 if time_series_only == 'True':
     time_series_only = True
@@ -81,8 +84,8 @@ regions = ['north_atlantic', 'subpolar_gyre', 'intergyre', 'tropical_atlantic_no
            'tropical_atlantic_south', 'global', 'global60', 'nh', 'spg_rahmstorf',
            'spg_menary18', 'spg_leo20']
 
-cmip5_list_file = list_location + '/cmip5_list.txt'
-cmip6_list_file = list_location + '/cmip6_list.txt'
+cmip5_list_file = os.path.join(list_location, 'cmip5_list.txt')
+cmip6_list_file = os.path.join(list_location, 'cmip6_list.txt')
 
 cmip5_models = []
 with open(cmip5_list_file, 'r') as f:
@@ -525,4 +528,3 @@ with open(save_file_ann, 'wb') as handle:
 #     print "DONE!"
 
 print("Program finished sucessfully")
-
