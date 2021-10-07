@@ -66,14 +66,15 @@ print("myhost = {:s}".format(myhost))
 usr = os.environ["USER"]
 
 if 'ciclad' in myhost:
+    raise ValueError("deprecated")
     # Ciclad options
-    forecast_datadir = '/data/mmenary/python_saves/CMIP_{:s}/'.format(forecast_var)
-    analogue_datadir = '/data/mmenary/python_saves/CMIP_{:s}/'.format(analogue_var)
-    processed_output_dir = '/prodigfs/ipslfs/dods/mmenary/AnalogueCache'
-    scripts_dir = '/home/mmenary/python/scripts/'
-    hadisst_save_file = '/data/mmenary/python_saves/HadISST_time_series_regions.pkl'
-    en4_save_file = '/data/mmenary/python_saves/EN4_0-500m_time_series_regions.pkl'
-    hadcrut4_save_file = '/data/mmenary/python_saves/HadCRUT4_time_series_regions.pkl'
+    # forecast_datadir = '/data/mmenary/python_saves/CMIP_{:s}/'.format(forecast_var)
+    # analogue_datadir = '/data/mmenary/python_saves/CMIP_{:s}/'.format(analogue_var)
+    # processed_output_dir = '/prodigfs/ipslfs/dods/mmenary/AnalogueCache'
+    # scripts_dir = '/home/mmenary/python/scripts/'
+    # hadisst_save_file = '/data/mmenary/python_saves/HadISST_time_series_regions.pkl'
+    # en4_save_file = '/data/mmenary/python_saves/EN4_0-500m_time_series_regions.pkl'
+    # hadcrut4_save_file = '/data/mmenary/python_saves/HadCRUT4_time_series_regions.pkl'
 else:
     # Jasmin options
     forecast_datadir = '/work/scratch-nopw/{}/CMIP_{:s}/'.format(usr, forecast_var)

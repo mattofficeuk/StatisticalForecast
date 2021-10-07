@@ -177,9 +177,12 @@ nlead = 11
 lead_times = np.arange(nlead)
 
 myhost = os.uname()[1]
-print "myhost = {:s}".format(myhost)
+print("myhost = {:s}".format(myhost))
+usr = os.environ["USER"]
+print("{.s}".format(usr))
 
 if 'ciclad' in myhost:
+    raise ValueError("deprecated")
     scripts_dir = '/home/mmenary/python/scripts/'
     processed_output_dir = '/modfs/ipslfs/dods/mmenary/AnalogueCache'
     map_output_dir = '/modfs/ipslfs/dods/mmenary/AnalogueCache'
@@ -192,17 +195,17 @@ if 'ciclad' in myhost:
     text_file_dir = '/data/mmenary/text_files'
     hist_map_dir = '/data/mmenary/python_saves'
 else:
-    scripts_dir = '/home/users/mmenary/scripts/'
-    processed_output_dir = '/work/scratch-nopw/mmenary/AnalogueCache'
-    map_output_dir = '/work/scratch-nopw/mmenary/SkillMaps'
-    raw_analogue_output_dir = '/work/scratch-nopw/mmenary/CMIP_{:s}/'.format(analogue_var)
-    raw_forecast_output_dir = '/work/scratch-nopw/mmenary/CMIP_{:s}/'.format(forecast_var)
-    hadisst_save_file = '/home/users/mmenary/data/HadISST_AnnualMapCMIPStyleRegridded.pkl'
-    en4_save_file = '/home/users/mmenary/data/EN4_0-500m_AnnualMapCMIPStyleRegridded.pkl'
-    hadcrut4_save_file = '/home/users/mmenary/data/HadCRUT4_AnnualMapCMIPStyleRegridded.pkl'
-    hadcrut4_save_file_djfm = '/home/users/mmenary/data/HadCRUT4_DJFMMapCMIPStyleRegridded.pkl'
-    text_file_dir = '/home/users/mmenary/text_files'
-    hist_map_dir = '/home/users/mmenary/data/python_saves'
+    scripts_dir = '/home/users/{:s}/scripts/'.format(usr)
+    processed_output_dir = '/work/scratch-nopw/{:s}/AnalogueCache'.format(usr)
+    map_output_dir = '/work/scratch-nopw/{:s}/SkillMaps'.format(usr)
+    raw_analogue_output_dir = '/work/scratch-nopw/{:s}/CMIP_{:s}/'.format(usr, analogue_var)
+    raw_forecast_output_dir = '/work/scratch-nopw/{:s}/CMIP_{:s}/'.format(usr, forecast_var)
+    hadisst_save_file = '/home/users/{:s}/data/HadISST_AnnualMapCMIPStyleRegridded.pkl'.format(usr)
+    en4_save_file = '/home/users/{:s}/data/EN4_0-500m_AnnualMapCMIPStyleRegridded.pkl'.format(usr)
+    hadcrut4_save_file = '/home/users/{:s}/data/HadCRUT4_AnnualMapCMIPStyleRegridded.pkl'.format(usr)
+    hadcrut4_save_file_djfm = '/home/users/{:s}/data/HadCRUT4_DJFMMapCMIPStyleRegridded.pkl'.format(usr)
+    text_file_dir = '/home/users/{:s}/text_files'.format(usr)
+    hist_map_dir = '/home/users/{:s}/data/python_saves'.format(usr)
 
 if (clim_start != 1960) or (clim_end != 1990):
     processed_output_dir += '_{:d}-{:d}'.format(clim_start, clim_end)

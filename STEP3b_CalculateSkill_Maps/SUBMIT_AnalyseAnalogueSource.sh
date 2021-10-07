@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 #sleep 10h
 
-scripts_dir=/home/users/mmenary/scripts
-output_dir=/work/scratch-nopw/mmenary/output
-#runscript=/home/users/mmenary/scripts/AnalyseAnalogueSource_Jasmin.py
-runscript=/home/users/mmenary/scripts/AnalyseAnalogueSource2_Jasmin.py
-#runscript=/home/users/mmenary/scripts/AnalyseAnalogueSource2_Jasmin_C_DEL.py
-#runscript=/home/users/mmenary/scripts/Convert_ExpandedMaps2ExpandedMapsCleverC_AndDoSkill.py
+echo "Running for username: $USER"
+usr=$USER
+
+scripts_dir="$(dirname "`pwd`")"
+output_dir=/work/scratch-nopw/${usr}/output3b
+analogue_datadir_in=/work/scratch-nopw/${usr}/AnalogueCache
+runscript=${scripts_dir}/STEP3b_CalculateSkill_Maps/AnalyseAnalogueSource2_Jasmin.py
 queue="short-serial"
 max_jobs=6000
 
@@ -19,14 +20,23 @@ norm_windows="35"
 nosds="True"
 regions="+65+00+00-90"
 
+export PYTHONPATH="$scripts_dir/python_modules/:${PYTHONPATH}"
+
+requiredDirectories="$output_dir $analogue_datadir_in"
+for requiredDirectory in $requiredDirectories
+do
+  echo $requiredDirectory
+  mkdir -p $requiredDirectory
+done
+
 for norm_window in $norm_windows
 do
   for nosd in $nosds
   do
     for region in $regions
     do
-      output=${output_dir}/AnalyseAnalogueSource_${norm_window}_${nosd}_${region}.out2
-      error=${output_dir}/AnalyseAnalogueSource_${norm_window}_${nosd}_${region}.err2
+      output=${output_dir}/AnalyseAnalogueSource_${norm_window}_${nosd}_${region}.out
+      error=${output_dir}/AnalyseAnalogueSource_${norm_window}_${nosd}_${region}.err
 
       ${scripts_dir}/queue_spacer_sbatch.sh $max_jobs  # This will check every 120s if I have less than N jobs in the Q
 
@@ -35,7 +45,6 @@ do
       $cmd
 
       echo "OUTPUT: ${output}"
-      #exit
     done
   done
 done

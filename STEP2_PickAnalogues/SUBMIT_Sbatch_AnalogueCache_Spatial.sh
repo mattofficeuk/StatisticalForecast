@@ -4,7 +4,7 @@
 
 var=SST
 #var=DepthAverageT
-echo $USER
+echo "Running for username: $USER"
 usr=$USER
 
 rmse_method="False"
@@ -16,53 +16,56 @@ save_trends_file=/home/users/${usr}/python/scripts/InputFilesList3_ANNUAL_ANALOG
 typeset -l choice  # To ignore case
 choice=$1
 
-# Ciclad
-# scripts_dir=/home/mmenary/python/scripts
-# analogue_datadir=/prodigfs/ipslfs/dods/mmenary/AnalogueCache
-# datadir=/data/mmenary/python_saves/CMIP_${var}
-# runscript=${scripts_dir}/wrapper_AnalogueCache_Spatial.sh
-# queue="short"
-# max_jobs=150
-
 # Jasmin
-scripts_dir=/home/users/${usr}/python/scripts
+# scripts_dir=/home/users/${usr}/python/scripts
+scripts_dir="$(dirname "`pwd`")"
 output_dir=/work/scratch-nopw/${usr}/output2
 analogue_datadir_in=/work/scratch-nopw/${usr}/AnalogueCache
 datadir=/work/scratch-nopw/${usr}/CMIP_${var}
-runscript=${scripts_dir}/AnalogueCache_Spatial_nonregrid.py
+runscript=${scripts_dir}/STEP2_PickAnalogues/AnalogueCache_Spatial_nonregrid.py
+lists_dir=${scripts_dir}/model_lists
 queue="short-serial"
 #max_jobs=1850
 max_jobs=5000
 
+export PYTHONPATH="$scripts_dir/python_modules/:${PYTHONPATH}"
+
 if [[ $choice == 'cmip5' ]]
 then
-  model_list=${scripts_dir}/cmip5_list.txt
+  model_list=${lists_dir}/cmip5_list.txt
   experiments="historical rcp45 rcp85"
   ens_mems="1 2 3 4 5 6 7 8 9 10"
 elif [[ $choice == 'cmip6' ]]
 then
-  model_list=${scripts_dir}/cmip6_list.txt
+  model_list=${lists_dir}/cmip6_list.txt
   experiments="historical ssp126 ssp585"
   ens_mems="1 2 3 4 5 6 7 8 9 10"
 elif [[ $choice == 'picon' ]]
 then
-  model_list=${scripts_dir}/cmip5_and_cmip6_list.txt
+  model_list=${lists_dir}/cmip5_and_cmip6_list.txt
   experiments="piControl"
   ens_mems="1"
 elif [[ $choice == 'damip6' ]]
 then
-  model_list=${scripts_dir}/damip_list.txt
+  model_list=${lists_dir}/damip_list.txt
   experiments="hist-GHG hist-aer hist-nat hist-stratO3"
   ens_mems="1 2 3 4 5 6 7 8 9 10"
 elif [[ $choice == 'test' ]]
 then
-  model_list=${scripts_dir}/test_list.txt
+  model_list=${lists_dir}/test_list.txt
   experiments="historical"
   ens_mems="1"
 else
   echo "Invalid choice!"
   exit
 fi
+
+requiredDirectories="$output_dir $datadir"
+for requiredDirectory in $requiredDirectories
+do
+  echo $requiredDirectory
+  mkdir -p $requiredDirectory
+done
 
 echo "Running for ${choice}. Setting expts/ens-mems/model-list accordingly:"
 echo "MODELS: $model_list"
@@ -206,7 +209,7 @@ do
 
     						${scripts_dir}/queue_spacer_sbatch.sh $max_jobs  # This will check every 120s if I have less than 100 jobs in the Q
 
-    						cmd="sbatch -p $queue -t 6:00:00 -n 1 -o ${output} -e ${error} ${runscript} ${model} ${experiment} ${ens_mem} ${window} ${target_domain} ${smoothing} ${testing} ${clim_string} ${concatenate_string}"
+    						cmd="sbatch -p $queue -t 6:00:00 -n 1 -o ${output} -e ${error} ${runscript} ${model} ${experiment} ${ens_mem} ${window} ${target_domain} ${smoothing} ${testing} ${clim_string} ${concatenate_string} ${scripts_dir}"
     						echo $cmd
     						$cmd
     						#exit

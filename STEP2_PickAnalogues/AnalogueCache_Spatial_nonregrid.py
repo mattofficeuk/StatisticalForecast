@@ -21,6 +21,7 @@ import mfilter
 import random
 from scipy import interpolate
 import sys
+import selection
 
 myhost = os.uname()[1]
 print("myhost = {:s}".format(myhost))
@@ -31,7 +32,7 @@ if 'ciclad' in myhost:
     # Ciclad options
     datadir = '/data/mmenary/python_saves/CMIP_{:s}/'.format(analogue_var)
     processed_output_dir = '/prodigfs/ipslfs/dods/mmenary/AnalogueCache'
-    scripts_dir = '/home/mmenary/python/scripts/'
+    # scripts_dir = '/home/mmenary/python/scripts/'
     hadisst_save_file = '/data/mmenary/python_saves/HadISST_AnnualMapCMIPStyleRegridded.pkl'
     hadisst_save_file_residual = '/data/mmenary/python_saves/HadISST_AnnualMapCMIPStyleRegridded_Residual.pkl'
     en4_save_file = '/data/mmenary/python_saves/EN4_0-500m_AnnualMapCMIPStyleRegridded.pkl'
@@ -42,7 +43,7 @@ else:
     datadir = '/work/scratch-nopw/{}/CMIP_{:s}/'.format(usr, analogue_var)
     #processed_output_dir = '/gws/nopw/j04/acsis/mmenary/python_saves/AnalogueCache/'
     processed_output_dir = '/work/scratch-nopw/{}/AnalogueCache'.format(usr)
-    scripts_dir = '/home/users/{}/python/scripts/'.format(usr)
+    # scripts_dir = '/home/users/{}/python/scripts/'.format(usr)
     hadisst_save_file = '/home/users/{}/data/HadISST_AnnualMapCMIPStyleRegridded.pkl'.format(usr)
     hadisst_save_file_residual = '/home/users/{}/data/HadISST_AnnualMapCMIPStyleRegridded_Residual.pkl'.format(usr)
     en4_save_file = '/home/users/{}/data/EN4_0-500m_AnnualMapCMIPStyleRegridded.pkl'.format(usr)
@@ -54,8 +55,8 @@ def read_target_domain(in_string):
         out_list.append(np.int(in_string[ii*3:(ii+1)*3]))
     return out_list
 
-sys.path.append(os.path.join(scripts_dir, 'selection.py'))
-import selection
+# sys.path.append(os.path.join(scripts_dir, 'selection.py'))
+# import selection
 
 # ==============
 # Constants we're reading in
@@ -70,6 +71,7 @@ testing = sys.argv[7]
 clim_string = sys.argv[8]
 concatenate_string = sys.argv[9] # Whether to try and merge available future experiments into the historical ones (but not the other
                                  # way around) in order to avoid an artificial cutoff around 2005/2015
+scripts_dir = sys.argv[10]
 
 clim_start = int(clim_string[:4])
 clim_end = int(clim_string[5:])
@@ -169,8 +171,8 @@ if save_trends:
 # ==================
 # Read the model data
 # ==================
-cmip5_list_file = os.path.join(scripts_dir, 'cmip5_list.txt')
-cmip6_list_file = os.path.join(scripts_dir, 'cmip6_list.txt')
+cmip5_list_file = os.path.join(scripts_dir, 'model_lists', 'cmip5_list.txt')
+cmip6_list_file = os.path.join(scripts_dir, 'model_lists', 'cmip6_list.txt')
 
 cmip5_models = []
 with open(cmip5_list_file, 'r') as f:

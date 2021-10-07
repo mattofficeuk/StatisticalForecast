@@ -28,6 +28,7 @@ usr = os.environ["USER"]
 print("{.s}".format(usr))
 
 if 'ciclad' in myhost:
+    raise ValueError("deprecated")
     # Ciclad options
     datadir = '/data/mmenary/python_saves/CMIP_{:s}/'.format(analogue_var)
     processed_output_dir = '/prodigfs/ipslfs/dods/mmenary/AnalogueCache'
@@ -195,7 +196,7 @@ print("Attempting to read: {:s}".format(this_file))
 
 if os.path.isfile(this_file):
     with open(this_file, 'rb') as handle:
-        sst_in, year_in, seasonal_cycle = pickle.load(handle, encoding='latin') 
+        sst_in, year_in, seasonal_cycle = pickle.load(handle, encoding='latin')
         lat_in = np.arange(0,len(sst_in),1)	#np.arange(-89.5,89.5,1)
         lon_in = np.arange(0,len(sst_in[0]),1)	#np.arange(-179.5,179.5,1)
         print(lat_in)

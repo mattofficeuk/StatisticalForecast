@@ -10,18 +10,21 @@ pass_number="1"
 remake_saves="True"
 testing="True"
 
-echo $USER
+echo "Running for username: $USER"
 usr=$USER
 
 # Jasmin
-output_dir=/work/scratch-nopw/${usr}/output3
-scripts_dir=/home/users/${usr}/python/scripts
+output_dir=/work/scratch-nopw/${usr}/output3a
+# scripts_dir=/home/users/${usr}/python/scripts
+scripts_dir="$(dirname "`pwd`")"
 analogue_datadir_in=/work/scratch-nopw/${usr}/AnalogueCache
-runscript=${scripts_dir}/AnalogueCache_Spatial_Skill_nonregrid.py
+runscript=${scripts_dir}/STEP3a_CalculateSkill_AreaAverages/AnalogueCache_Spatial_Skill_nonregrid.py
 queue="short-serial"
 #queue="long-serial"  # NOTE ALSO TIME CHANGED TO 168 IN SUBMIT!
 
 max_jobs=6000
+
+export PYTHONPATH="$scripts_dir/python_modules/:${PYTHONPATH}"
 
 # The forecast region
 target_regions="north_atlantic subpolar_gyre"
@@ -79,6 +82,12 @@ else
   method="Corr"
 fi
 
+requiredDirectories="$output_dir $analogue_datadir_in"
+for requiredDirectory in $requiredDirectories
+do
+  echo $requiredDirectory
+  mkdir -p $requiredDirectory
+done
 
 for subset in $subsets
 do
