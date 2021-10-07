@@ -57,7 +57,7 @@ then
 elif [[ $choice == 'test' ]]
 then
   model_list=${scripts_dir}/test_list.txt
-  experiments="piControl"
+  experiments="historical"
   ens_mems="1"
 else
   echo "Invalid choice!"
@@ -88,7 +88,12 @@ smoothings="1 5 11 21"
 smoothings="1 11 21"
 smoothings="5"
 
-testing="False"
+if [[ $choice == 'test' ]]
+then
+  testing="True"
+else
+  testing="False"
+fi
 
 concatenate_strings="True False"
 concatenate_strings="False"

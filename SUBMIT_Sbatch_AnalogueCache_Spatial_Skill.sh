@@ -8,7 +8,7 @@ forecast_var="SST"
 rmse_method="True"
 pass_number="1"
 remake_saves="True"
-testing="False"
+testing="True"
 
 echo $USER
 usr=$USER
