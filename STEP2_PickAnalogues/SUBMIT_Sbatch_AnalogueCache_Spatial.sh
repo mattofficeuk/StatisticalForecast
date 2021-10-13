@@ -172,6 +172,7 @@ do
               else
                 analogue_datadir=${analogue_datadir_in}
               fi
+              mkdir -p $analogue_datadir  ## In case it doesn't exist yet
 
               for concatenate_string in $concatenate_strings
               do
