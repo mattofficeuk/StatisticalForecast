@@ -39,6 +39,6 @@ Code and instructions for making analogue/statistical forecasts using CMIP5/6 da
 - `selection.py` specifies the procedure on which the selection of the analogues is based
 - `AnalogueCache_Spatial.py` - To find the best (based on a given method) analogue source data from the pre-processed data
 - `AnalogueCache_Spatial_Skill.py` - To take those source files and estimate the skill of the predictions
-- `AnalyseAnalogueSource2_Jasmin.py` - To look at the source files for the skill (maps) and do some analysis of these
+- `AnalyseAnalogueSource_Jasmin.py` - To look at the source files for the skill (maps) and do some analysis of these
 
 ![A schematic diagram of the analogue system](images/Schematic.png)
