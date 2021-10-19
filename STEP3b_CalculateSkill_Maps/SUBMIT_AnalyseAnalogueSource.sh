@@ -7,7 +7,7 @@ usr=$USER
 scripts_dir="$(dirname "`pwd`")"
 output_dir=/work/scratch-nopw/${usr}/output3b
 analogue_datadir_in=/work/scratch-nopw/${usr}/AnalogueCache
-runscript=${scripts_dir}/STEP3b_CalculateSkill_Maps/AnalyseAnalogueSource2_Jasmin.py
+runscript=${scripts_dir}/STEP3b_CalculateSkill_Maps/AnalyseAnalogueSource_Jasmin.py
 queue="short-serial"
 max_jobs=6000
 

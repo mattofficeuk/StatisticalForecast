@@ -1,7 +1,5 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 # The above is required for sbatch submission
-
-# As AnalyseAnalogueSource_Jasmin.py but written better!
 
 testing = False ######################################################################################
 testing2 = False
@@ -28,7 +26,7 @@ clim_start, clim_end = 1960, 1990
 # be the same as the window length over which the analogues were made
 import sys
 import numpy as np
-print len(sys.argv)
+print(len(sys.argv))
 if len(sys.argv) == 4:
     norm_window = np.long(sys.argv[1])
     divide_by_sd_in = sys.argv[2]
@@ -47,7 +45,7 @@ elif len(sys.argv) == 5:
     method = sys.argv[4]
 
     split_file = infile.split('_')
-    print split_file
+    print(split_file)
     chosen_target_domain = split_file[2][6:]
     if split_file[4] in ['gyre', 'atlantic']:  # For regions including an underscore, remove the second part
         split_file.pop(4)
@@ -107,12 +105,12 @@ def check_files(path, files, output_prefix):
             all_files_exist = False
 
     if all_files_exist:
-        print " == All files have already been copied to: {:s}".format(path)
+        print(" == All files have already been copied to: {:s}".format(path))
 
     out_list = '{:s}/{:s}_{:s}.txt'.format(text_file_dir, output_prefix, base)
     with open(out_list, 'wb') as handle:
         if not all_files_exist:
-            print "Writing text file to:\n   {:s}".format(out_list)
+            print("Writing text file to:\n   {:s}".format(out_list))
         handle.writelines(unique_files_newlines)
     return all_files_exist
 
@@ -129,10 +127,9 @@ def check_and_pad(sst_in, year_in):
                 iyr_in = np.argwhere(year_in == year)[0][0]
                 sst_model[iyr, :, :] = sst_in[iyr_in, :, :]
             else:
-#                 print iyr, year
                 if ((year-1) in year_in) and ((year+1) in year_in):
                     # If data either side exists then interpolate
-                    print " ++ INTERPOLATING MISSING DATA"
+                    print(" ++ INTERPOLATING MISSING DATA")
                     iyr_in_m1 = np.argwhere(year_in == (year-1))[0][0]
                     iyr_in_p1 = np.argwhere(year_in == (year+1))[0][0]
                     sst_model[iyr, :, :] = (sst_in[iyr_in_m1, :, :] + sst_in[iyr_in_p1, :, :]) / 2.
@@ -179,18 +176,18 @@ lead_times = np.arange(nlead)
 myhost = os.uname()[1]
 print("myhost = {:s}".format(myhost))
 usr = os.environ["USER"]
-print("{.s}".format(usr))
+print("{:s}".format(usr))
 
 if 'ciclad' in myhost:
     raise ValueError("deprecated")
-    scripts_dir = '/home/mmenary/python/scripts/'
-    processed_output_dir = '/modfs/ipslfs/dods/mmenary/AnalogueCache'
-    map_output_dir = '/modfs/ipslfs/dods/mmenary/AnalogueCache'
-    raw_analogue_output_dir = '/data/mmenary/python_saves/CMIP_{:s}/'.format(analogue_var)
-    raw_forecast_output_dir = '/data/mmenary/python_saves/CMIP_{:s}/'.format(forecast_var)
-    hadisst_save_file = '/data/mmenary/python_saves/HadISST_AnnualMapCMIPStyleRegridded.pkl'
-    en4_save_file = '/data/mmenary/python_saves/EN4_0-500m_AnnualMapCMIPStyleRegridded.pkl'
-    hadcrut4_save_file = '/data/mmenary/python_saves/HadCRUT4_AnnualMapCMIPStyleRegridded.pkl'
+    scripts_dir = '/home/{:s}/python/scripts/'
+    processed_output_dir = '/modfs/ipslfs/dods/{:s}/AnalogueCache'
+    map_output_dir = '/modfs/ipslfs/dods/{:s}/AnalogueCache'
+    raw_analogue_output_dir = '/data/{:s}/python_saves/CMIP_{:s}/'.format(analogue_var)
+    raw_forecast_output_dir = '/data/{:s}/python_saves/CMIP_{:s}/'.format(forecast_var)
+    hadisst_save_file = '/data/{:s}/python_saves/HadISST_AnnualMapCMIPStyleRegridded.pkl'
+    en4_save_file = '/data/{:s}/python_saves/EN4_0-500m_AnnualMapCMIPStyleRegridded.pkl'
+    hadcrut4_save_file = '/data/{:s}/python_saves/HadCRUT4_AnnualMapCMIPStyleRegridded.pkl'
     hadcrut4_save_file_djfm = '/data/mmenary/python_saves/HadCRUT4_DJFMMapCMIPStyleRegridded.pkl'
     text_file_dir = '/data/mmenary/text_files'
     hist_map_dir = '/data/mmenary/python_saves'
@@ -216,29 +213,29 @@ skill_base = 'ANALOGUE{:s}_FORECAST{:s}_DOMAIN{:s}_TARGET{:s}_WINDOW{:d}_MEMS{:d
 skill_base = skill_base.format(analogue_var, forecast_var, chosen_target_domain, chosen_target_region, chosen_window, max_mems_to_take,
                                smoothing_string, '', '', rmse_string)
 skill_file = os.path.join(processed_output_dir, skill_base)
-print 'skill_file', skill_file
+print('skill_file', skill_file)
 
 base_template = 'ANALOGUE{:s}_DOMAIN{:s}_TARGET{:s}_WINDOW{:d}_MEMS{:d}_SpatialSkill{:s}{:s}{:s}'
 base = base_template.format(analogue_var, chosen_target_domain, chosen_target_region, chosen_window, chosen_num_mems, smoothing_string, pass_string, rmse_string)
 
 processed_template = '{:s}_{:s}_'.format(analogue_var, chosen_target_domain) + '{:s}_{:s}-{:s}' + '_Window{:d}{:s}_SpatialProcessed{:s}{:s}.pkl'.format(chosen_window, smoothing_string, '', rmse_string)
-print 'processed_template', processed_template
+print('processed_template', processed_template)
 
 raw_analogue_template = '{:s}' + '_{:s}_'.format(analogue_var) + '{:s}_{:s}' + '_Annual_Regridded.pkl'
-print 'raw_analogue_template', raw_analogue_template
+print('raw_analogue_template', raw_analogue_template)
 
 raw_forecast_template = '{:s}' + '_{:s}_'.format(forecast_var) + '{:s}_{:s}' + '_Annual_Regridded.pkl'
-print 'raw_forecast_template', raw_forecast_template
+print('raw_forecast_template', raw_forecast_template)
 
 trends_template = '{:s}_SavedTrends_{:s}_'.format(analogue_var, chosen_target_domain) + '{:s}_{:s}-{:s}' + '_Window{:d}{:s}_SpatialProcessed{:s}{:s}.pkl'.format(chosen_window, smoothing_string, '', rmse_string)
-print 'trends_template', trends_template
+print('trends_template', trends_template)
 
 source_file = os.path.join(processed_output_dir, 'Source' + trends_or_annual + '_' + base + '.pkl')
-print 'source_file', source_file
+print('source_file', source_file)
 #
 # forecast_file = os.path.join(processed_output_dir, 'ForecastMaps' + trends_or_annual + '_' + base + '.pkl')
 forecast_file = os.path.join(processed_output_dir, 'ForecastMaps' + trends_or_annual + '_' + base + '.pkl.{:s}Method{:d}'.format(method, norm_window) + sd_string + scaling_string)
-print 'forecast_file', forecast_file
+print('forecast_file', forecast_file)
 
 if clever_skill:
     clever_skill_string = 'Clever'
@@ -248,10 +245,10 @@ else:
 skill_map_file = os.path.join(map_output_dir, '{:s}SkillMaps'.format(clever_skill_string) + trends_or_annual + '_' + base + '.pkl.{:s}Method{:d}'.format(method, norm_window) + sd_string + scaling_string)
 if testing2:
     skill_map_file += '.TESTING2'
-print 'skill_map_file', skill_map_file
+print('skill_map_file', skill_map_file)
 
 if os.path.isfile(skill_map_file) and not recreate_skill:
-    print "Skipping - already created: {:s}".format(skill_map_file)
+    print("Skipping - already created: {:s}".format(skill_map_file))
 
 # forecast_file_ensmn_expanded = os.path.join(processed_output_dir, 'ForecastMaps_EnsMnExpanded' + trends_or_annual + '_' + base + '.pkl')
 forecast_file_ensmn_expanded = os.path.join(processed_output_dir, 'ForecastMaps_EnsMnExpanded' + trends_or_annual + '_' + base + '.pkl.{:s}Method{:d}'.format(method, norm_window) + sd_string + scaling_string)
@@ -259,19 +256,19 @@ forecast_file_ensmn_expanded_random = os.path.join(processed_output_dir, 'Foreca
 if testing:
     forecast_file_ensmn_expanded += '.TEST'
     forecast_file_ensmn_expanded_random += '.TEST'
-print 'forecast_file_ensmn_expanded', forecast_file_ensmn_expanded
-print 'forecast_file_ensmn_expanded_random', forecast_file_ensmn_expanded_random
+print('forecast_file_ensmn_expanded', forecast_file_ensmn_expanded)
+print('forecast_file_ensmn_expanded_random', forecast_file_ensmn_expanded_random)
 
 if not os.path.isfile(skill_file):
     raise ValueError("No save file: {:s}".format(skill_file))
 
 with open(skill_file, 'rb') as handle:
-    print "Reading: {:s}".format(skill_file)
+    print("Reading: {:s}".format(skill_file))
     if trends:
-        print "Doing TRENDS version"
+        print("Doing TRENDS version")
         _, _, _, _, trend_corr_info, trend_forecast, trend_forecast_means, trend_forecast_sds = pickle.load(handle)
     elif annual:
-        print "Doing ANNUAL version"
+        print("Doing ANNUAL version")
         trend_corr_info, trend_forecast, trend_forecast_means, trend_forecast_sds, corr_info_mask, _, _, _ = pickle.load(handle)
         # Because I haven't masked ann_corr_info (which this really is) properly
         ind = np.argwhere(corr_info_mask.mask[:, 0, 0] == True)  # Find where masked
@@ -285,7 +282,7 @@ elif forecast_var == 'DepthAverageT':
 elif forecast_var == 'SAT':
     forecast_save_file = hadcrut4_save_file
 with open(forecast_save_file, 'rb') as handle:
-    print "Loading save file: {:s}".format(forecast_save_file)
+    print("Loading save file: {:s}".format(forecast_save_file))
     obs_map_expanded, _, _, _, _, year_forecast_obs = pickle.load(handle)
     nyrs_forecast_obs = len(year_forecast_obs)
 
@@ -296,7 +293,7 @@ elif analogue_var == 'DepthAverageT':
 elif analogue_var == 'SAT':
     analogue_save_file = hadcrut4_save_file
 with open(analogue_save_file, 'rb') as handle:
-    print "Loading save file: {:s}".format(analogue_save_file)
+    print("Loading save file: {:s}".format(analogue_save_file))
     analogue_obs_map_expanded, _, _, _, _, year_analogue_obs = pickle.load(handle)
     nyrs_analogue_obs = len(year_analogue_obs)
 
@@ -352,14 +349,14 @@ all2 = check_files(raw_analogue_output_dir, raw_analogue_files, 'InputFilesList2
 all4 = check_files(raw_forecast_output_dir, raw_forecast_files, 'InputFilesList4'+trends_or_annual)
 
 if not all1:
-    print "\n\n++ Missing SpatialProcessed files ++"
+    print("\n\n++ Missing SpatialProcessed files ++")
 if not all2:
     # Not actually used currently
-    print "\n\n++ Missing Raw Analogue ({:s}) files ++".format(analogue_var)
+    print("\n\n++ Missing Raw Analogue ({:s}) files ++".format(analogue_var))
 # if not all3:
-#     print "\n\n++ Missing SpatialProcessed TRENDS files ++"
+#     print("\n\n++ Missing SpatialProcessed TRENDS files ++"
 if not all4:
-    print "\n\n++ Missing Raw Forecast ({:s}) files ++".format(forecast_var)
+    print("\n\n++ Missing Raw Forecast ({:s}) files ++".format(forecast_var))
 
 if not all1:
     raise ValueError('The SpatialProcessed files are required.')
@@ -420,7 +417,7 @@ def find_climatology_for_model(model):
         with open(climatology_file, 'rb') as handle:
             sst_clim = pickle.load(handle)
     else:
-        print "No climatology file exists, filling with missing data: {:s}".format(climatology_file)
+        print("No climatology file exists, filling with missing data: {:s}".format(climatology_file))
         sst_clim = np.ma.masked_all(shape=(nj, ni))
     return sst_clim
 
@@ -461,7 +458,7 @@ if testing:
 
 # Make and store the analogue source (trend) maps
 if os.path.isfile(source_file) and os.path.isfile(forecast_file) and os.path.isfile(forecast_file_ensmn_expanded) and os.path.isfile(forecast_file_ensmn_expanded_random) and not testing:
-    print "READING:\n  {:s}\n  {:s}\n  {:s}".format(source_file, forecast_file, forecast_file_ensmn_expanded)
+    print("READING:\n  {:s}\n  {:s}\n  {:s}".format(source_file, forecast_file, forecast_file_ensmn_expanded))
     with open(source_file, 'rb') as handle:
         obs_trend, analogue_trend = pickle.load(handle)
     with open(forecast_file, 'rb') as handle:
@@ -501,7 +498,7 @@ else:
 
     first_trends_file = True
     for iyr_forecast, year in enumerate(year_forecast_obs):
-        print iyr_forecast, year
+        print(iyr_forecast, year)
         if testing:
             if iyr_forecast > 50: continue
 #         if iyr_forecast != 34: continue ###########################################################
@@ -558,7 +555,7 @@ else:
             # if all3:
             #     with open(this_trends_file, 'rb') as handle:
             #         data = pickle.load(handle)
-            #         print len(data)
+            #         print(len(data)
             #         target_masked_trend, sst_masked_trend, target_masked_mean_anom, sst_masked_mean_anom, year_ann, year_model = data
             #         if first_trends_file:
             #             obs_trend = target_masked_trend[:, jj0:jj1, ii0:ii1]
@@ -568,10 +565,10 @@ else:
             if all4 and not only_do_random:
                 # Now get the forecast data - matching filename
                 with open(this_forecast_file, 'rb') as handle:
-                    print this_forecast_file
+                    print(this_forecast_file)
                     sat_in, year_forecast_model  = pickle.load(handle)
                 if len(year_forecast_model) == 0:
-                    print " ++ Skipping (zero length time array): {:s}".format(this_forecast_file)
+                    print(" ++ Skipping (zero length time array): {:s}".format(this_forecast_file))
                     continue
                 sat_in, year_forecast_model = check_and_pad(sat_in, year_forecast_model)  # These are "raw" so unpadded.
 
@@ -585,15 +582,15 @@ else:
                 if chosen_year in year_forecast_model:
                     index2 = np.argwhere(year_forecast_model == chosen_year)[0][0]
                     if index != index2:
-                        print " -- Changing index ({:d}): {:d} -> {:d} Y{:d}   {:s}".format(imem, index, index2, chosen_year, this_forecast_file)
+                        print(" -- Changing index ({:d}): {:d} -> {:d} Y{:d}   {:s}".format(imem, index, index2, chosen_year, this_forecast_file))
                 else:
-                    print " ++ Skipping (year does not exist): {:s}".format(this_forecast_file)
+                    print(" ++ Skipping (year does not exist): {:s}".format(this_forecast_file))
                     continue
 
                 ntimes = np.min([nlead, len(year_forecast_model[index2:])])
                 if ntimes < 11:
-                    print " ++ Unfull forecast times, nlead={:d}, ntimes={:d}".format(nlead, ntimes)
-                    print index2, this_forecast_file
+                    print(" ++ Unfull forecast times, nlead={:d}, ntimes={:d}".format(nlead, ntimes))
+                    print(index2, this_forecast_file)
                 # forecast_map[iyr_forecast, imem, :ntimes, :, :] = sat_in[index2:index2+ntimes, jj0b:jj1b, ii0b:ii1b]
                 sat_in_full[imem, :ntimes, :, :] = sat_in[index2:index2+ntimes, :, :]
                 sat_in_MeanInWindow[imem, :, :] = np.ma.mean(sat_in[index2-(norm_window-1):index2+1, :, :], axis=0)
@@ -609,10 +606,10 @@ else:
             if all4 and do_random:
                 # Now get the forecast data - matching filename
                 with open(this_forecast_file_random, 'rb') as handle:
-                    print this_forecast_file
+                    print(this_forecast_file)
                     sat_in, year_forecast_model  = pickle.load(handle)
                 if len(year_forecast_model) == 0:
-                    print " ++ Skipping (zero length time array): {:s}".format(this_forecast_file)
+                    print(" ++ Skipping (zero length time array): {:s}".format(this_forecast_file))
                     continue
                 sat_in, year_forecast_model = check_and_pad(sat_in, year_forecast_model)  # These are "raw" so unpadded.
 
@@ -621,15 +618,15 @@ else:
                 if chosen_year in year_forecast_model:
                     index2 = np.argwhere(year_forecast_model == chosen_year)[0][0]
                     if index_random != index2:
-                        print " -- Changing index ({:d}): {:d} -> {:d} Y{:d}   {:s}".format(imem, index_random, index2, chosen_year, this_forecast_file_random)
+                        print(" -- Changing index ({:d}): {:d} -> {:d} Y{:d}   {:s}".format(imem, index_random, index2, chosen_year, this_forecast_file_random))
                 else:
-                    print " ++ Skipping (year does not exist): {:s}".format(this_forecast_file_random)
+                    print(" ++ Skipping (year does not exist): {:s}".format(this_forecast_file_random))
                     continue
 
                 ntimes = np.min([nlead, len(year_forecast_model[index2:])])
                 if ntimes < 11:
-                    print " ++ Unfull forecast times, nlead={:d}, ntimes={:d}".format(nlead, ntimes)
-                    print index2, this_forecast_file_random
+                    print(" ++ Unfull forecast times, nlead={:d}, ntimes={:d}".format(nlead, ntimes))
+                    print(index2, this_forecast_file_random)
                 sat_in_full_random[imem, :ntimes, :, :] = sat_in[index2:index2+ntimes, :, :]
                 sat_in_MeanInWindow_random[imem, :, :] = np.ma.mean(sat_in[index2-(norm_window-1):index2+1, :, :], axis=0)
                 sat_in_SDInWindow_random[imem, :, :] = np.ma.std(sat_in[index2-(norm_window-1):index2+1, :, :], axis=0)
@@ -681,25 +678,25 @@ else:
                 mns_saved_random[iyr_forecast, :, :] = np.ma.mean(mns_random[:, 0, :, :], axis=0)
 
     if testing:
-        print forecast_map_ensmn_stdsd_expanded[:, 0, 150, 150]
+        print(forecast_map_ensmn_stdsd_expanded[:, 0, 150, 150])
         with open('/work/scratch-nopw/mmenary/DEL.pkl', 'wb') as handle:
             pickle.dump(forecast_map_ensmn_stdsd_expanded, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
     if method[:6] == 'Clever':
         # Find the mn/sd for each lead time at each grid point
         if not only_do_random:
-            print "Calculating LTD SD"
+            print("Calculating LTD SD")
             forecast_sd = np.ma.std(forecast_map_ensmn_stdsd_expanded, axis=1)[:, np.newaxis, :, :]
-            print "Calculating LTD Mean"
+            print("Calculating LTD Mean")
             forecast_mn = np.ma.mean(forecast_map_ensmn_stdsd_expanded, axis=1)[:, np.newaxis, :, :]
 
         if do_random:
-            print "Calculating LTD SD for random"
+            print("Calculating LTD SD for random")
             forecast_sd_random = np.ma.std(forecast_map_ensmn_stdsd_expanded_random, axis=1)[:, np.newaxis, :, :]
-            print "Calculating LTD Mean for random"
+            print("Calculating LTD Mean for random")
             forecast_mn_random = np.ma.mean(forecast_map_ensmn_stdsd_expanded_random, axis=1)[:, np.newaxis, :, :]
 
-        print "Calculating Obs SD and Mean in windows and reshaping"
+        print("Calculating Obs SD and Mean in windows and reshaping")
         obs_map_mn_reshaped = np.ma.masked_all_like(forecast_mn)
         obs_map_sd_reshaped = np.ma.masked_all_like(forecast_mn)
         nyrs = obs_map_mn_reshaped.shape[0]
@@ -708,7 +705,7 @@ else:
             obs_map_sd_reshaped[iyr_o, :, :, :] = np.ma.std(obs_map_expanded[iyr_o-norm_window+1:iyr_o+1, :, :], axis=0)
 
         if not only_do_random:
-            print "Combining..."
+            print("Combining...")
             if method[:7] == 'CleverB':
                 forecast_map_ensmn_stdsd_expanded = (forecast_map_ensmn_stdsd_expanded - forecast_mn) * (obs_map_sd_reshaped / forecast_sd) + mns_saved[:, np.newaxis, :, :]
             elif method[:7] in ['CleverC', 'CleverD']:
@@ -721,7 +718,7 @@ else:
                     forecast_map_ensmn_stdsd_expanded = forecast_map_ensmn_stdsd_expanded + (obs_MeanInCleverDWindow - sat_in_MeanInCleverDWindow_reshaped)[:, np.newaxis, :, :]
 
         if do_random:
-            print "Combining random..."
+            print("Combining random...")
             if method[:7] == 'CleverB':
                 forecast_map_ensmn_stdsd_expanded_random = (forecast_map_ensmn_stdsd_expanded_random - forecast_mn_random) * (obs_map_sd_reshaped / forecast_sd_random) + mns_saved_random[:, np.newaxis, :, :]
             elif method[:7] == 'CleverC':
@@ -729,7 +726,7 @@ else:
                 forecast_map_ensmn_stdsd_expanded_random = forecast_map_ensmn_stdsd_expanded_random + (obs_map_expanded - forecast_map_ensmn_stdsd_expanded_random[:, 0, :, :])[:, np.newaxis, :, :]
 
         if testing:
-            print forecast_map_ensmn_stdsd_expanded[:, 0, 150, 150]
+            print(forecast_map_ensmn_stdsd_expanded[:, 0, 150, 150])
     # if not testing:
         # if all3:
         #     with open(source_file, 'wb') as handle:
@@ -738,20 +735,20 @@ else:
         # with open(forecast_file, 'wb') as handle:
         #     pickle.dump([obs_map, forecast_map], handle, protocol=pickle.HIGHEST_PROTOCOL)
         # with open(forecast_file_ensmn_expanded, 'wb') as handle:
-        #     print "Writing save file: {:s}".format(forecast_file_ensmn_expanded)
+        #     print("Writing save file: {:s}".format(forecast_file_ensmn_expanded)
         #     pickle.dump([obs_map_expanded, forecast_map_ensmn_expanded, forecast_map_ensmn_stdsd_expanded,
         #                 forecast_map_ensmn_expanded_random, forecast_map_ensmn_stdsd_expanded_random],
         #                 handle, protocol=pickle.HIGHEST_PROTOCOL)
         if not only_do_random:
             with open(forecast_file_ensmn_expanded, 'wb') as handle:
-                print "Writing save file: {:s}".format(forecast_file_ensmn_expanded)
+                print("Writing save file: {:s}".format(forecast_file_ensmn_expanded))
                 pickle.dump(forecast_map_ensmn_stdsd_expanded, handle, protocol=pickle.HIGHEST_PROTOCOL)
         if do_random:
             with open(forecast_file_ensmn_expanded_random, 'wb') as handle:
-                print "Writing save file: {:s}".format(forecast_file_ensmn_expanded_random)
+                print("Writing save file: {:s}".format(forecast_file_ensmn_expanded_random))
                 pickle.dump(forecast_map_ensmn_stdsd_expanded_random, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-print "DONE!"
+print("DONE!")
 
 if testing:
     raise ValueError("STOP HERE FOR NOW WHILE TESTING")
@@ -761,7 +758,7 @@ end_lead =   [5, 6, 7, 8, 9, 10, 10, 10]
 nlead_multi = len(start_lead)
 
 if os.path.isfile(skill_map_file) and not recreate_skill:
-    print "Skipping - already created: {:s}".format(skill_map_file)
+    print("Skipping - already created: {:s}".format(skill_map_file))
 else:
     if clever_skill:
         this_forecast_map_ensmn_expanded = forecast_map_ensmn_stdsd_expanded
@@ -776,7 +773,7 @@ else:
         with open(hist_map_file, 'rb') as handle:
             historicals, hist_models = pickle.load(handle)
 
-    print "Calculating residuals"
+    print("Calculating residuals")
     if testing2:
         obs_map_expanded_res = obs_map_expanded.copy()
         this_forecast_map_ensmn_expanded_res = this_forecast_map_ensmn_expanded.copy()
@@ -786,7 +783,7 @@ else:
         this_forecast_map_ensmn_expanded_res = calculate_residual3d(this_forecast_map_ensmn_expanded, nlead, historicals)
         this_random_forecast_map_ensmn_expanded_res = calculate_residual3d(this_random_forecast_map_ensmn_expanded, nlead, historicals)
 
-    print "Doing normal skill"
+    print("Doing normal skill")
     skill_expanded = calculate_skill3d(this_forecast_map_ensmn_expanded, nlead, obs_map_expanded, year_forecast_obs, testing=testing2)
     skill_expanded1960 = calculate_skill3d(this_forecast_map_ensmn_expanded, nlead, obs_map_expanded, year_forecast_obs, testing=testing2, since1960=True)
     skill_expanded1990 = calculate_skill3d(this_forecast_map_ensmn_expanded, nlead, obs_map_expanded, year_forecast_obs, testing=testing2, before1990=True)
@@ -798,7 +795,7 @@ else:
     skill_expanded1990_multi = calculate_skill3d(this_forecast_map_ensmn_expanded, nlead, obs_map_expanded, year_forecast_obs,
                                                  testing=testing2, before1990=True, multi=True, start_lead=start_lead, end_lead=end_lead)
 
-    print "Doing RANDOM skill"
+    print("Doing RANDOM skill")
     random_skill_expanded = calculate_skill3d(this_random_forecast_map_ensmn_expanded, nlead, obs_map_expanded, year_forecast_obs, testing=testing2)
     random_skill_expanded1960 = calculate_skill3d(this_random_forecast_map_ensmn_expanded, nlead, obs_map_expanded, year_forecast_obs, testing=testing2, since1960=True)
     random_skill_expanded1990 = calculate_skill3d(this_random_forecast_map_ensmn_expanded, nlead, obs_map_expanded, year_forecast_obs, testing=testing2, before1990=True)
@@ -810,7 +807,7 @@ else:
     random_skill_expanded1990_multi = calculate_skill3d(this_random_forecast_map_ensmn_expanded, nlead, obs_map_expanded, year_forecast_obs,
                                                         testing=testing2, before1990=True, multi=True, start_lead=start_lead, end_lead=end_lead)
 
-    print "Doing residual skill"
+    print("Doing residual skill")
     res_skill_expanded = calculate_skill3d(this_forecast_map_ensmn_expanded_res, nlead, obs_map_expanded_res, year_forecast_obs, testing=testing2)
     res_skill_expanded1960 = calculate_skill3d(this_forecast_map_ensmn_expanded_res, nlead, obs_map_expanded_res, year_forecast_obs, testing=testing2, since1960=True)
     res_skill_expanded1990 = calculate_skill3d(this_forecast_map_ensmn_expanded_res, nlead, obs_map_expanded_res, year_forecast_obs, testing=testing2, before1990=True)
@@ -823,7 +820,7 @@ else:
                                                      testing=testing2, before1990=True, multi=True, start_lead=start_lead, end_lead=end_lead)
 
     # Now all again for the RANDOM (shuffled) data
-    print "Doing RANDOM residual skill"
+    print("Doing RANDOM residual skill")
     random_res_skill_expanded = calculate_skill3d(this_random_forecast_map_ensmn_expanded_res, nlead, obs_map_expanded_res, year_forecast_obs, testing=testing2)
     random_res_skill_expanded1960 = calculate_skill3d(this_random_forecast_map_ensmn_expanded_res, nlead, obs_map_expanded_res, year_forecast_obs, testing=testing2, since1960=True)
     random_res_skill_expanded1990 = calculate_skill3d(this_random_forecast_map_ensmn_expanded_res, nlead, obs_map_expanded_res, year_forecast_obs, testing=testing2, before1990=True)
@@ -842,7 +839,7 @@ else:
     start_dates = 1973 + np.arange(17)
     chosen_leads = [2, 9]
 
-    print "Doing DJFM skill"
+    print("Doing DJFM skill")
     with open(hadcrut4_save_file_djfm, 'rb') as handle:
         obs_map_expanded_djfm, _, _, _, _, _ = pickle.load(handle)
 
@@ -864,7 +861,7 @@ else:
     obs_map_grad = np.ma.masked_all(shape=(nj, ni))
     obs_map_djfm_grad = np.ma.masked_all(shape=(nj, ni))
     for jj in range(nj):
-        print jj, nj
+        print(jj, nj)
         if testing:
             if jj != 100: continue
         for ii in range(ni):
@@ -896,7 +893,7 @@ else:
 
     if not testing:
         with open(skill_map_file, 'wb') as handle:
-            print "Writing to: {:s}".format(skill_map_file)
+            print("Writing to: {:s}".format(skill_map_file))
             pickle.dump([skill_expanded, skill_expanded1960, skill_expanded1990, skill_expanded_multi,
                          skill_expanded1960_multi, skill_expanded1990_multi, res_skill_expanded,
                          res_skill_expanded1960, res_skill_expanded1990, res_skill_expanded_multi,
@@ -906,4 +903,4 @@ else:
                          forecast_map_lagens_grad, obs_map_djfm_grad, obs_map_grad, random_res_skill_expanded_multi,
                          random_res_skill_expanded1960_multi, random_res_skill_expanded1990_multi], handle,
                         protocol=pickle.HIGHEST_PROTOCOL)
-print "DONE!"
+print("DONE!")

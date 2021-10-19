@@ -85,7 +85,7 @@ def recentre_forecast(forecast_3d_in, num_mems_to_take, analogue_means, analogue
     nyrs = len(target_time_series)
     max_mems_to_take = 20
     if old_recentre_method:
-        print "OLD"
+        print("OLD")
         # Subtract t=0 from analogue to make an anomaly
         forecast_anomt0 = forecast_3d_in - np.repeat(forecast_3d_in[:, :, 0][:, :, None], nlead, axis=2)
 
@@ -98,7 +98,7 @@ def recentre_forecast(forecast_3d_in, num_mems_to_take, analogue_means, analogue
         if keep_mems: return np.repeat(forecast_anomt0_mmm_recentred[:, np.newaxis, :], max_mems_to_take, axis=1)
         return forecast_anomt0_mmm_recentred
     elif new_recentre_method:
-        print "NEW"
+        print("NEW")
         # Average over all models - don't care about their biases as we will remove the overall bias at the end
         # NOTE: As different models make up each analogue, it is surprising that removing t=0 isn't a better method
         # but perhaps removing the models ANALOGUE PERIOD mean would work (not tried yet)
@@ -136,12 +136,12 @@ def recentre_forecast(forecast_3d_in, num_mems_to_take, analogue_means, analogue
         # Re-add analogue period OBS mean BUT THIS MAKES IT WORSE (sometimes...)
         # But is probably a more justifiable choice...
         if new_recentre_method2:
-            print "NEW2"
+            print("NEW2")
             forecast_anom_norm += target_time_series_means_rehaped
 
         # Re-add the analogue period ANALOGUE mean
         elif new_recentre_method2b:
-            print "NEW2b"
+            print("NEW2b")
             forecast_anom_norm += np.repeat(analogue_means[:, :, None], nlead, axis=2)
 
         # Re-add full obs period mean (has no effect but makes ts look better)
@@ -159,7 +159,7 @@ def recentre_forecast(forecast_3d_in, num_mems_to_take, analogue_means, analogue
 #             forecast_anom_norm_mmm = lead_time_bias_correction(forecast_anom_norm_mmm)
         return forecast_anom_norm_mmm
     elif simple_recentre_method:
-        print "SIMPLE"
+        print("SIMPLE")
         # This method just averages together the raw forecast data, so we could potentially use the
         # same models to create an "analysis".
         if keep_mems: return forecast_3d_in
@@ -168,7 +168,7 @@ def recentre_forecast(forecast_3d_in, num_mems_to_take, analogue_means, analogue
             forecast_mmm = lead_time_bias_correction(forecast_mmm)
         return forecast_mmm
     elif simpleScaled_recentre_method:
-        print "SIMPLESCALED"
+        print("SIMPLESCALED")
         # This method just averages together the raw forecast data, but also scales by the OBS SST variance
         forecast_mmm = np.ma.mean(forecast_3d_in[:, max_mems_to_take-num_mems_to_take:, :], axis=1)
 
@@ -220,22 +220,18 @@ def recentre_forecast(forecast_3d_in, num_mems_to_take, analogue_means, analogue
         # Re-add analogue period OBS mean BUT THIS MAKES IT WORSE (sometimes...)
         # But is probably a more justifiable choice...
         if clever_scaling_method:
-            print "CLEVER"
+            print("CLEVER")
             forecast_anom_norm_mmm_norm += target_time_series_means_rehaped[:, 0, :]
 
         # Re-add the analogue period ANALOGUE mean
         elif clever_scaling_methodb:
-            print "CLEVERb"
+            print("CLEVERb")
             forecast_anom_norm_mmm_norm += np.repeat(np.ma.mean(analogue_means[:, max_mems_to_take-num_mems_to_take:],
                                                                 axis=1)[:, None], nlead, axis=1)
 
         # Re-add the actual OBS (i.e. forecast var) at t=0 (like if we were initialising from "truth")
         # and remove the forecast at t=0
         elif clever_scaling_methodc or clever_scaling_methodd:
-            # print forecast_anom_norm_mmm_norm.shape
-            # print target_time_series[:, None].shape
-            # print forecast_anom_norm_mmm_norm[:, 0].shape
-            # print forecast_anom_norm_mmm_norm[:, 0][:, None].shape
             forecast_anom_norm_mmm_norm += (target_time_series - forecast_anom_norm_mmm_norm[:, 0])[:, None]
 
         # Re-add full obs period mean (has no effect but makes ts look better)
@@ -251,9 +247,9 @@ def recentre_forecast(forecast_3d_in, num_mems_to_take, analogue_means, analogue
         return forecast_anom_norm_mmm_norm
     elif map_method or map_method_nosd:
         if map_method:
-            print "MAP"
+            print("MAP")
         elif map_method_nosd:
-            print "MAP_NOSD"
+            print("MAP_NOSD")
         forecast_anom = forecast_3d_in - np.repeat(analogue_means[:, :, None], nlead, axis=2)
 
         # Create sds and means for obs for each analogue period and make same shape as model array
@@ -357,7 +353,7 @@ def calculate_skill3d(forecast_in, nlead, this_target, target_years, multi=False
         forecast_skill = np.ma.masked_all(shape=(nlead, nj, ni))
         for ilead in lead_times:
             for jj in range(nj):
-                print jj, nj
+                print(jj, nj)
                 for ii in range(ni):
                     if testing:
                         if jj < 100: continue
@@ -376,7 +372,7 @@ def calculate_skill3d(forecast_in, nlead, this_target, target_years, multi=False
         for iforecast, (ss, ee) in enumerate(zip(start_lead, end_lead)):
             nleads = (ee + 1 - ss)
             for jj in range(nj):
-                print jj, nj
+                print(jj, nj)
                 for ii in range(ni):
                     if testing:
                         if jj < 100: continue
@@ -403,7 +399,7 @@ def calculate_skill3d(forecast_in, nlead, this_target, target_years, multi=False
 def calculate_residual(forecast2d_in, nlead, hist_ts_in):
     dim_inflated = False
     if forecast2d_in.ndim == 1:
-#         print "Inflating dimensions"
+#         print("Inflating dimensions"
         forecast2d_in = forecast2d_in[:, None]
         dim_inflated = True
     assert forecast2d_in.shape[0] == hist_ts_in.shape[0]
@@ -438,15 +434,15 @@ def calculate_residual3d(forecast4d_in, nlead, hist3d_in):
     residual_file = residual_dir + '/PreCalc_Residual_{:d}.pkl'.format(ids)
     if os.path.isfile(residual_file):
         with open(residual_file, 'rb') as handle:
-            print "Loading pre-calculated residual file: {:s}".format(residual_file)
+            print("Loading pre-calculated residual file: {:s}".format(residual_file))
             forecast_res = pickle.load(handle)
             return forecast_res
     else:
-        print "Creating and saving residual file: {:s}".format(residual_file)
+        print("Creating and saving residual file: {:s}".format(residual_file))
 
     dim_inflated = False
     if forecast4d_in.ndim == 3:
-        print "Inflating dimensions [year, lead, jj, ii]"
+        print("Inflating dimensions [year, lead, jj, ii]")
         forecast4d_in = forecast4d_in[:, np.newaxis,  :, :]
         dim_inflated = True
     assert forecast4d_in.shape[0] == hist3d_in.shape[0]
@@ -519,12 +515,12 @@ def simple_running_skill(forecast_recentred, running_skill_window, target_time_s
 def lead_time_bias_correction(in_arr):
     ndim = in_arr.ndim
     if ndim == 2:  # MMM [year, lead_time]
-        print 'Bias correcting MMM'
+        print('Bias correcting MMM')
         lead_time_bias = np.ma.mean(in_arr, axis=0)
         lead_time_bias -= lead_time_bias.mean()
         bias_corrected = in_arr - lead_time_bias[None, :]  # Broadcast these together
     elif ndim == 3:  # [model, year, lead_time]
-        print 'Bias correcting all models'
+        print('Bias correcting all models')
         lead_time_bias = np.ma.mean(in_arr, axis=1)
         lead_time_bias -= np.ma.mean(lead_time_bias, axis=1, keepdims=True)
         bias_corrected = in_arr - lead_time_bias[:, None, :]  # Broadcast these together
@@ -609,7 +605,7 @@ def skill_map(in_arr, target_arr, years, after1960=False, before1990=False):
     nyrs = len(years)
 
     if in_arr.ndim == 3:
-        print " ++ Inflating in_arr dimensions from 3 to 4 by adding LEAD dimension..."
+        print(" ++ Inflating in_arr dimensions from 3 to 4 by adding LEAD dimension...")
         in_arr = in_arr[:, np.newaxis, :, :]
 
     assert in_arr.ndim  == 4  # year, lead, jj, ii
@@ -628,7 +624,7 @@ def skill_map(in_arr, target_arr, years, after1960=False, before1990=False):
 
     for jj in range(nj):
         # if jj != 90: continue ################################################################################
-        print jj, nj
+        print(jj, nj)
         for ii in range(ni):
             obs_ts = target_arr[:, jj, ii]  # year
             forecast_ts = in_arr[:, :, jj, ii]  # year, lead
