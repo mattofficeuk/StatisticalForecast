@@ -326,7 +326,7 @@ for ifile, thetao_file in enumerate(thetao_files):
 
         peak_to_peak = thetao.ptp()
         if peak_to_peak < 0.1:
-            print("WARNING: Thi.to_dataset(name='SST')s data looks to all be missing/0")
+            print("WARNING: This data looks to all be missing")
             continue
 
         if model in ['GISS-E2-1-H', 'GISS-E2-H', 'MIROC5', 'GISS-E2-R']:
