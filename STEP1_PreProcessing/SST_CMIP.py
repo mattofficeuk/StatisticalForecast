@@ -19,6 +19,7 @@ import glob
 from cmip import *
 import time as time_module  # Because I use "time" elsewhere
 from scipy import interpolate
+import xarray as xr
 
 if host == 'ciclad':
     raise ValueError("This is now deprecated")
@@ -200,7 +201,9 @@ else:
     ens_mem_string = '-{:s}'.format(ens_mem)
 
 # save_file = '{:s}/{:s}_SST_{:s}_{:s}{:s}_Monthly{:s}.pkl'.format(save_dir, project, model, experiment, ens_mem_string, time_series_only_string)
-save_file_ann = '{:s}/{:s}_SST_{:s}_{:s}{:s}_Annual{:s}.pkl'.format(save_dir, project, model, experiment, ens_mem_string, time_series_only_string)
+save_file_ann_field = '{:s}/{:s}_SSTfield_{:s}_{:s}{:s}_Annual{:s}.nc'.format(save_dir, project, model, experiment, ens_mem_string, time_series_only_string)
+save_file_ann_timeser = '{:s}/{:s}_SSTtimeser_{:s}_{:s}{:s}_Annual{:s}.nc'.format(save_dir, project, model, experiment, ens_mem_string, time_series_only_string)
+save_file_ann_mask = '{:s}/{:s}_SSTmask_{:s}_{:s}{:s}_Annual{:s}.nc'.format(save_dir, project, model, experiment, ens_mem_string, time_series_only_string)
 # save_file_regridded = '{:s}/{:s}_SST_{:s}_{:s}{:s}_{:s}_Regridded{:s}.pkl'.format(save_dir, project, model, experiment, ens_mem_string, period_string, time_series_only_string)
 # netcdf_save_file = '{:s}/{:s}_SST_{:s}_{:s}{:s}_Annual{:s}.nc'.format(save_dir_netcdf, project, model, experiment, ens_mem_string, time_series_only_string)
 if TESTING:
@@ -210,7 +213,7 @@ if TESTING:
     # netcdf_save_file += '.TEST'
 
 # print "Will save to:\n{:s}\n{:s}\n{:s}\n{:s}\n".format(save_file, save_file_ann, save_file_regridded, netcdf_save_file)
-print("Will save to: {:s}".format(save_file_ann))
+print("Will save to: {:s} and {:s}".format(save_file_ann_field,save_file_ann_timeser))
 
 # ==================
 # Find the institute associated with the input model
@@ -323,7 +326,7 @@ for ifile, thetao_file in enumerate(thetao_files):
 
         peak_to_peak = thetao.ptp()
         if peak_to_peak < 0.1:
-            print("WARNING: This data looks to all be missing/0")
+            print("WARNING: Thi.to_dataset(name='SST')s data looks to all be missing/0")
             continue
 
         if model in ['GISS-E2-1-H', 'GISS-E2-H', 'MIROC5', 'GISS-E2-R']:
@@ -451,6 +454,19 @@ for iyr, yy in enumerate(year_ann):
         for region in regions:
             sst_ts_ann[region][iyr * nseasons + iseason] = sst_ts[region][ind].mean(axis=0)
 
+#sst_timesers = xr.DataArray(sst_ts_ann['north_atlantic'], name='SST', dims = ['time'], coords = {'time': (['time'],year_ann)})
+
+for region in regions:
+    if region == 'north_atlantic':
+        sst_timesers = xr.DataArray(sst_ts_ann[region], name=region, dims = ['time'], coords = {'time': (['time'],year_ann)}).to_dataset(name='north_atlantic')
+    else:
+        sst_timesers[region] = xr.DataArray(sst_ts_ann[region], name=region, dims = ['time'], coords = {'time': (['time'],year_ann)})
+
+print(sst_ann.shape)
+
+sst_field = xr.DataArray(sst_ann, name='SST', dims = ['time','y','x'], coords = {'time': (['time'],year_ann), 'lat': (['y','x'],lat), 'lon': (['y','x'],lon)}).to_dataset(name='SST')
+
+sst_mask = xr.DataArray(sst_ann[:,:,:].mask, name="mask", dims = ['time','y','x'], coords = {'time': (['time'],year_ann), 'lat': (['y','x'],lat), 'lon': (['y','x'],lon)}).to_dataset(name='mask')
 
 # ==================
 # Do some regridding
@@ -500,17 +516,38 @@ sst_regridded = np.ma.array(sst_regridded, mask=np.repeat(mask_regridded[np.newa
 # ==================
 # Save the data (annual version only?)
 # ==================
-with open(save_file_ann, 'wb') as handle:
-    print("Saving SST data: {:s}".format(save_file_ann))
-    print(sst_ann.shape, area.shape, lon.shape, lat.shape, year_ann.shape)
-    if time_series_only:
-        pickle.dump([sst_ts_ann, year_ann], handle, protocol=pickle.HIGHEST_PROTOCOL)
+#with open(save_file_ann, 'wb') as handle:
+#    print("Saving SST data: {:s}".format(save_file_ann))
+#    print(sst_ann.shape, area.shape, lon.shape, lat.shape, year_ann.shape)
+#    if time_series_only:
+#        pickle.dump([sst_ts_ann, year_ann], handle, protocol=pickle.HIGHEST_PROTOCOL)
+#    else:
+#        if seasonal:
+#            pickle.dump([sst_ann, sst_ts_ann, area, lon, lat, year_ann, season], handle, protocol=pickle.HIGHEST_PROTOCOL)
+#        else:
+#            pickle.dump([sst_ann, sst_ts_ann, area, lon, lat, year_ann], handle, protocol=pickle.HIGHEST_PROTOCOL)
+#    print("DONE!")
+
+# sst_ts_ann_list = list(sst_ts_ann.items())
+# sst_ts_ann_arr = np.array(sst_ts_ann_list,dtype=object)
+
+print("Saving SST data: {:s} and {:s}".format(save_file_ann_field,save_file_ann_timeser))
+#print(sst_timesers.shape,sst_ann.shape, area.shape, lon.shape, lat.shape, year_ann.shape)
+
+print(lon)
+
+if time_series_only:
+    #ds = xr.Dataset({'SST': (('time'), sst_timesers)}, coords={'region':regions,'time':year_ann})
+    sst_timesers.to_netcdf(path=save_file_ann_timeser,format="NETCDF4")
+else:
+    if seasonal:
+        pickle.dump([sst_ann, sst_ts_ann, area, lon, lat, year_ann, season], handle, protocol=pickle.HIGHEST_PROTOCOL)
     else:
-        if seasonal:
-            pickle.dump([sst_ann, sst_ts_ann, area, lon, lat, year_ann, season], handle, protocol=pickle.HIGHEST_PROTOCOL)
-        else:
-            pickle.dump([sst_ann, sst_ts_ann, area, lon, lat, year_ann], handle, protocol=pickle.HIGHEST_PROTOCOL)
-    print("DONE!")
+        sst_timesers.to_netcdf(path=save_file_ann_timeser,format="NETCDF4")
+        sst_field.to_netcdf(path=save_file_ann_field,format="NETCDF4") 
+        sst_mask.to_netcdf(path=save_file_ann_mask,format="NETCDF4")
+
+print("DONE!")
 
 # ==================
 # Save the data (annual version only?)

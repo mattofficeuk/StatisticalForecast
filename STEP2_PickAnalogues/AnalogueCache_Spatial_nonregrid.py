@@ -22,6 +22,7 @@ import random
 from scipy import interpolate
 import sys
 import selection
+import xarray as xr
 
 myhost = os.uname()[1]
 print("myhost = {:s}".format(myhost))
@@ -194,17 +195,60 @@ else:
 if experiment == 'piControl':
     base_file = '{:s}_{:s}_{:s}_{:s}_Annual.pkl'.format(project, analogue_var, model, experiment)
 else:
-    base_file = '{:s}_{:s}_{:s}_{:s}-{:s}_Annual.pkl'.format(project, analogue_var, model, experiment, ens_mem)
-this_file = os.path.join(datadir, base_file)
-print("Attempting to read: {:s}".format(this_file))
+    base_file_field = '{:s}_{:s}field_{:s}_{:s}-{:s}_Annual.nc'.format(project, analogue_var, model, experiment, ens_mem)
+    base_file_timeser = '{:s}_{:s}timeser_{:s}_{:s}-{:s}_Annual.nc'.format(project, analogue_var, model, experiment, ens_mem)
+    base_file_mask = '{:s}_{:s}mask_{:s}_{:s}-{:s}_Annual.nc'.format(project, analogue_var, model, experiment, ens_mem)
+this_file_field = os.path.join(datadir, base_file_field)
+print("Attempting to read: {:s}".format(this_file_field))
+this_file_timeser = os.path.join(datadir, base_file_timeser)
+print("Attempting to read: {:s}".format(this_file_timeser))
+this_file_mask = os.path.join(datadir, base_file_mask)
+print("Attempting to read: {:s}".format(this_file_mask))
 
-if os.path.isfile(this_file):
-    with open(this_file, 'rb') as handle:
-        sst_in, sst_ts_in, area_in, lon_in, lat_in, year_model_in = pickle.load(handle, encoding='latin')
-        nyrs = len(year_model_in)
-        _, nj_hist, ni_hist = sst_in.shape
+
+if os.path.isfile(this_file_mask):
+    ds_mask = xr.open_dataset(this_file_mask).to_array()
+    print('Mask loaded')
+    print(ds_mask)
+    mask_in = ds_mask.values
+
+    #with open(this_file, 'rb') as handle:
+        #sst_in, sst_ts_in, area_in, lon_in, lat_in, year_model_in = pickle.load(handle, encoding='latin')
+        #nyrs = len(year_model_in)
+        #_, nj_hist, ni_hist = sst_in.shape
 else:
-    raise ValueError("{:s} does not exist".format(this_file))
+    raise ValueError("{:s} does not exist".format(this_file_mask))
+
+if os.path.isfile(this_file_field):
+    ds_field = xr.open_dataset(this_file_field).to_array()
+    print('Field loaded')
+    print(ds_field)
+    sst_in = np.ma.masked_array(ds_field.values,mask=mask_in)
+    lon_in = ds_field['lon'].values
+    lat_in = ds_field['lat'].values
+    year_model_in = ds_field['time'].values
+
+    #with open(this_file, 'rb') as handle:
+        #sst_in, sst_ts_in, area_in, lon_in, lat_in, year_model_in = pickle.load(handle, encoding='latin')
+        #nyrs = len(year_model_in)
+        #_, nj_hist, ni_hist = sst_in.shape
+else:
+    raise ValueError("{:s} does not exist".format(this_file_field))
+
+print(sst_in)
+
+if os.path.isfile(this_file_timeser):
+    ds_timeser = xr.open_dataset(this_file_timeser)
+    print('Time series loaded')
+    print(ds_timeser)
+    sst_ts_in = np.ma.masked_array(ds_timeser.to_array().values)
+
+    #with open(this_file, 'rb') as handle:
+        #sst_in, sst_ts_in, area_in, lon_in, lat_in, year_model_in = pickle.load(handle, encoding='latin')
+        #nyrs = len(year_model_in)
+        #_, nj_hist, ni_hist = sst_in.shape
+else:
+    raise ValueError("{:s} does not exist".format(this_file_timeser))
 
 if concatenate_hist_with_fut:
     print("Considering concatenating")
@@ -290,14 +334,19 @@ def regrid_sst(sst_in, year_in):
     for tt in range(nyrs):
 #         if tt not in [97, 98, 99, 100]: continue
         print('{:d}/{:d}'.format(tt, nyrs))
+        print(len(np.array([lat_in.ravel(), lon_in.ravel()]).T))
+        print(len(sst_in[0, 0, :, :].ravel()))
+        print(len(sst_in[0, 0, :, :].mask.ravel()))
         sst_regridded[tt, :, :] = interpolate.griddata(np.array([lat_in.ravel(), lon_in.ravel()]).T,
-                                                       sst_in[tt, :, :].ravel(), (lat_re, lon_re),
+                                                       sst_in[0, tt, :, :].ravel(), (lat_re, lon_re),
                                                        method='linear')
     mask_regridded = interpolate.griddata(np.array([lat_in.ravel(), lon_in.ravel()]).T,
-                                          sst_in[0, :, :].mask.ravel(), (lat_re, lon_re),
+                                          sst_in[0, 0, :, :].mask.ravel(), (lat_re, lon_re),
                                           method='linear')
     sst_regridded = np.ma.array(sst_regridded, mask=np.repeat(mask_regridded[np.newaxis, :, :], nyrs, axis=0))
     return sst_regridded
+
+print(sst_in.mask)
 
 def mask_by_domain(sst_in, year_in):
     # TODO: If smoothing then increase this mask size appropriately so it won't be too small later
