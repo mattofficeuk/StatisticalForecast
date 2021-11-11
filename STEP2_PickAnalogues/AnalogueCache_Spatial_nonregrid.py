@@ -9,6 +9,7 @@ analogue_var = 'SST'
 # Whether to save the trends data. This will look into a separate file (which must exist)
 # that tells the script whether to save the trends or not. If these trends are not required
 # then this script will exit. Note that the "target_region" is hardcoded as europe1
+# CURRENTLY DOES NOT WORK WITH .NC
 save_trends = False
 
 import numpy as np
@@ -128,10 +129,10 @@ else:
 processed_base = '{:s}_{:s}_{:s}_{:s}-{:s}_Window{:d}{:s}_Spatial{:s}Processed{:s}{:s}'
 processed_filled = processed_base.format(analogue_var, target_domain_string, model, experiment, ens_mem,
                                          window, smoothing_string, residual_string, testing_string, rmse_string)
-processed_file = os.path.join(processed_output_dir, processed_filled) + '.pkl'
+processed_file = os.path.join(processed_output_dir, processed_filled) + '.nc'
 print(processed_file)
 
-target_saved_base = '{:s}ObsSaved_{:s}_Window{:d}{:s}_Spatial{:s}Processed{:s}{:s}.pkl'
+target_saved_base = '{:s}ObsSaved_{:s}_Window{:d}{:s}_Spatial{:s}Processed{:s}{:s}.nc'
 target_saved_filled = target_saved_base.format(analogue_var, target_domain_string, window, smoothing_string,
                                                residual_string, testing_string, rmse_string)
 target_saved_file = os.path.join(processed_output_dir, target_saved_filled)
@@ -139,7 +140,7 @@ print(target_saved_file)
 if os.path.isfile(target_saved_file):
     print("Loading time-saver target data:  {:s}".format(target_saved_file))
     with open(target_saved_file, 'rb') as handle:
-        target_saved = pickle.load(handle)
+        target_saved = pickle.load(handle)   # MUST BE CHANGED ON SECOND RUN!
 else:
     target_saved = {}
 target_keys = target_saved.keys()
@@ -206,6 +207,7 @@ this_file_mask = os.path.join(datadir, base_file_mask)
 print("Attempting to read: {:s}".format(this_file_mask))
 
 
+# reading from netcdf file to xarray. Temporarily converts to np array, which will be changed.
 if os.path.isfile(this_file_mask):
     ds_mask = xr.open_dataset(this_file_mask).to_array()
     print('Mask loaded')
@@ -587,11 +589,25 @@ corr_ann = selection.csc(method, target_masked_mean_anom, year_ann, sst_masked_m
 print("Computing spatial correlation (of trends)")
 corr_trend = selection.csc(method, target_masked_trend, year_ann, sst_masked_trend, year_model)
 
-print("Attempting to open file for writing:  {:s}".format(processed_file))
-with open(processed_file, 'wb') as handle:
-    print("Writing save file: {:s}".format(processed_file))
-    processed_data = [corr_ann, corr_trend, year_ann, year_model]
-    pickle.dump(processed_data, handle,  protocol=pickle.HIGHEST_PROTOCOL)
+# TEMPORAL FIX: Writing np arrays to xarray for exporting as .nc files.
+print("Forming xarray files for printing")
+corr_print = xr.DataArray(corr_ann, name="corr_ann", dims = ['time_pred','time'], coords = {'time_pred': (['time_pred'],year_ann),'time': (['time'],year_model)}).to_dataset(name='corr_ann')
+corr_print['corr_trend'] = xr.DataArray(corr_trend, name="corr_trend", dims = ['time_pred','time'], coords = {'time_pred': (['time_pred'],year_ann),'time': (['time'],year_model)})
+
+print(target_masked.shape, target_masked_trend.shape, target_masked_mean.shape, target_masked_mean_anom.shape)
+target_xr = xr.DataArray(target_masked, name='target_masked', dims = ['time','y','x'], coords = {'time': (['time'],year_ann), 'lat': (['y','x'],lat_re), 'lon': (['y','x'],lon_re)}).to_dataset(name='target_masked')
+target_xr['target_masked_trend'] = xr.DataArray(target_masked_trend, name='target_masked_trend', dims = ['time','y','x'], coords = {'time': (['time'],year_ann), 'lat': (['y','x'],lat_re), 'lon': (['y','x'],lon_re)})
+target_xr['target_masked_mean'] = xr.DataArray(target_masked_mean, name='target_masked_mean', dims = ['time','y','x'], coords = {'time': (['time'],year_ann), 'lat': (['y','x'],lat_re), 'lon': (['y','x'],lon_re)})
+target_xr['target_masked_mean_anom'] = xr.DataArray(target_masked_mean_anom, name='target_masked_mean_anom', dims = ['time','y','x'], coords = {'time': (['time'],year_ann), 'lat': (['y','x'],lat_re), 'lon': (['y','x'],lon_re)})
+# target_xr = xr.Dataset.from_dict(target_saved)
+
+#print("Attempting to open file for writing:  {:s}".format(processed_file))
+#with open(processed_file, 'wb') as handle:
+#    print("Writing save file: {:s}".format(processed_file))
+#    processed_data = [corr_ann, corr_trend, year_ann, year_model]
+#    pickle.dump(processed_data, handle,  protocol=pickle.HIGHEST_PROTOCOL)
+print("Writing xarray file to netcdf: {:s}".format(processed_file))
+corr_print.to_netcdf(path=processed_file,format="NETCDF4")
 
 if save_trends:
     print("Attempting to open file for writing:  {:s}".format(trends_file))
@@ -601,9 +617,13 @@ if save_trends:
                           sst_masked_mean_anom, year_ann, year_model]
         pickle.dump(processed_data, handle,  protocol=pickle.HIGHEST_PROTOCOL)
 
-if not os.path.isfile(target_saved_file):
-    print("Attempting to create time-saver target file:  {:s}".format(target_saved_file))
-    with open(target_saved_file, 'wb') as handle:
-        pickle.dump(target_saved, handle,  protocol=pickle.HIGHEST_PROTOCOL)
+#if not os.path.isfile(target_saved_file):
+#    print("Attempting to create time-saver target file:  {:s}".format(target_saved_file))
+#    with open(target_saved_file, 'wb') as handle:
+#        pickle.dump(target_saved, handle,  protocol=pickle.HIGHEST_PROTOCOL)
+print("Attempting to create time-saver target file:  {:s}".format(target_saved_file))
+target_xr.to_netcdf(path=target_saved_file,format="NETCDF4")
+
+print(corr_ann.shape, corr_trend.shape, year_ann.shape, year_model.shape)
 
 print("COMPLETE!")
