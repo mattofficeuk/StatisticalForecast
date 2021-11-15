@@ -2,10 +2,8 @@
 Code and instructions for making analogue/statistical forecasts using CMIP5/6 data
 
 ## Things currently being worked on
-1. MATT - Check out latest version and confirm I can get it (re)working on Jasmin
-2. MATT - Develop a structuring approach to set up directories in the program
-3. LEO - Should the intermediate files, which are currently Python pickle files, be something more interoperable? Perhaps it would be good to be able to store the VERSION number of the code that created the files in the files themselves
-4. MATT - AnalyseAnalogueSource2_Jasmin.py is still in the original format and hardcoded to Matt's paths etc. Make generic.
+1. LEO - Should the intermediate files, which are currently Python pickle files, be something more interoperable? Perhaps it would be good to be able to store the VERSION number of the code that created the files in the files themselves
+2. MATT - AnalyseAnalogueSource2_Jasmin.py is still in the original format and hardcoded to Matt's paths etc. Make generic.
 
 ## Short term future plans
 1. A script to `touch` the temporary files on Jasmin so we don't have to keep recreating them (they are auto-deleted after 1 month)
@@ -27,18 +25,20 @@ Code and instructions for making analogue/statistical forecasts using CMIP5/6 da
 3. DONE LEO - Include a 'testing' function for the scripts to enable quick development and trouble shooting
 
 ## Very general workflow
-1. Run `SUBMIT_ProcessVarsCMIP.sh` with some input (e.g. `cmip6` ) to create the pre-processed data
-2. Run `SUBMIT_Sbatch_AnalogueCache_Spatial.sh` (which calls `AnalogueCache_Spatial.py` ) to do some analysis of _spatial_ data
-3. And `SUBMIT_Sbatch_AnalogueCache_Spatial_Skill.sh` (which calls `AnalogueCache_Spatial_Skill.py` ) to calculate the skill of some of this spatial data
-4. Run `SUBMIT_AnalyseAnalogueSource.sh` (which calls `AnalyseAnalogueSource2_Jasmin.py` ) to do some analysis of the analogue fields that were used above
+1. `STEP1_PreProcessing`: Run `SUBMIT_ProcessVarsCMIP.sh` with some input (e.g. `cmip6` ) to create the pre-processed data
+2. `STEP2_CreateAnalogues`: Run `SUBMIT_CreateAnalogues.sh` (which calls `CreateAnalogues.py` ) to create the analogues based on choices specified in the `SUBMIT` file
+3. `STEP3a_PickAnalogues_AreaAverages`: Run `SUBMIT_PickAnalogues_AreaAverages.sh` (which calls `PickAnalogues_AreaAverages.py` ) to _pick_ the analogues based on choices specified in the `SUBMIT` file. Note: This is for the area-averaged (e.g. SPG area average) indices. The analogues that were chosen are saved as output and you can then visualise these and combine them in different ways (leading to different skill estimates) in the associated Python Notebook scripts (TODO: Matt to add these)
+4. `STEP3b_PickAnalogues_CalculateSkill_Maps`: Run `SUBMIT_PickAnalogues_CalculateSkill_Maps.sh` (which calls `PickAnalogues_CreateSkill_Maps.py` ) to do both _pick_ and _calculate the skill_ of a combination of analogues. The skill is also calculated here as it is very memory intensive (and slow) working with spatial data, so to do this in interactive notebooks would be hard.
 
 ## Description of files
 - `SUBMIT*` - wrapper scripts (Shell) that take some input (e.g. `cmip6` - see scripts) and submit jobs to the Jasmin queues, calling the python scripts
 - `queue_spacer_sbatch.sh` - A script to ensure we don't submit too many jobs at once. I'm not sure if this is necessary
 - `analogue.py` and `cmip.py` and `mfilter.py` - Somewhere where I have stored custom code relevant for this work
-- `selection.py` specifies the procedure on which the selection of the analogues is based
-- `AnalogueCache_Spatial.py` - To find the best (based on a given method) analogue source data from the pre-processed data
-- `AnalogueCache_Spatial_Skill.py` - To take those source files and estimate the skill of the predictions
-- `AnalyseAnalogueSource_Jasmin.py` - To look at the source files for the skill (maps) and do some analysis of these
+- `selection.py` - Specifies the procedure on which the selection of the analogues is based
+- `###_CMIP.py` - To take the raw CMIP data and pre-process it into a common format. No analogue stuff here.
+- `CreateAnalogues.py` - To take the pre-processed data and convert it to the analogue format, for later selection
+- `PickAnalogues_AreaAverages.py` - To find the best (based on a given method) analogue source data
+- `TODO.py` - A *Python notebook* to calculate the skill and visualise the AreaAverage analogue predictions
+- `PickAnalogues_CreateSkill_Maps.py` - To both _pick_ the best analogues and then _calculate the skill_ in map form.
 
 ![A schematic diagram of the analogue system](images/Schematic.png)
