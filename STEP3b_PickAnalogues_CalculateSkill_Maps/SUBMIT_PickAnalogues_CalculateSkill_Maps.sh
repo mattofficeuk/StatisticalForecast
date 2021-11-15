@@ -7,7 +7,7 @@ usr=$USER
 scripts_dir="$(dirname "`pwd`")"
 output_dir=/work/scratch-nopw/${usr}/output3b
 analogue_datadir_in=/work/scratch-nopw/${usr}/AnalogueCache
-runscript=${scripts_dir}/STEP3b_CalculateSkill_Maps/AnalyseAnalogueSource_Jasmin.py
+runscript=${scripts_dir}/STEP3b_CalculateSkill_Maps/PickAnalogues_CreateSkill_Maps.py
 queue="short-serial"
 max_jobs=6000
 
@@ -35,8 +35,8 @@ do
   do
     for region in $regions
     do
-      output=${output_dir}/AnalyseAnalogueSource_${norm_window}_${nosd}_${region}.out
-      error=${output_dir}/AnalyseAnalogueSource_${norm_window}_${nosd}_${region}.err
+      output=${output_dir}/PickAnalogues_CreateSkill_Maps_${norm_window}_${nosd}_${region}.out
+      error=${output_dir}/PickAnalogues_CreateSkill_Maps_${norm_window}_${nosd}_${region}.err
 
       ${scripts_dir}/queue_spacer_sbatch.sh $max_jobs  # This will check every 120s if I have less than N jobs in the Q
 

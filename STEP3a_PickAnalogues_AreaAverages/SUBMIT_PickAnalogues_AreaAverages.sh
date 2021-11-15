@@ -18,7 +18,7 @@ output_dir=/work/scratch-nopw/${usr}/output3a
 # scripts_dir=/home/users/${usr}/python/scripts
 scripts_dir="$(dirname "`pwd`")"
 analogue_datadir_in=/work/scratch-nopw/${usr}/AnalogueCache
-runscript=${scripts_dir}/STEP3a_CalculateSkill_AreaAverages/AnalogueCache_Spatial_Skill_nonregrid.py
+runscript=${scripts_dir}/STEP3a_CalculateSkill_AreaAverages/PickAnalogues_AreaAverages.py
 queue="short-serial"
 #queue="long-serial"  # NOTE ALSO TIME CHANGED TO 168 IN SUBMIT!
 
@@ -161,8 +161,8 @@ do
             			fi
                 fi
 
-                output=${output_dir}/AnalogueCache_Spatial_Skill_${vars_concat}.out
-                error=${output_dir}/AnalogueCache_Spatial_Skill_${vars_concat}.err
+                output=${output_dir}/PickAnalogues_AreaAverages_${vars_concat}.out
+                error=${output_dir}/PickAnalogues_AreaAverages_${vars_concat}.err
 
                 ${scripts_dir}/queue_spacer_sbatch.sh $max_jobs  # This will check every 120s if I have less than max_jobs jobs in the Q
 

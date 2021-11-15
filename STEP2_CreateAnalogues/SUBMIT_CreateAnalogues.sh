@@ -22,7 +22,7 @@ scripts_dir="$(dirname "`pwd`")"
 output_dir=/work/scratch-nopw/${usr}/output2
 analogue_datadir_in=/work/scratch-nopw/${usr}/AnalogueCache
 datadir=/work/scratch-nopw/${usr}/CMIP_${var}
-runscript=${scripts_dir}/STEP2_PickAnalogues/AnalogueCache_Spatial_nonregrid.py
+runscript=${scripts_dir}/STEP2_PickAnalogues/CreateAnalogues.py
 lists_dir=${scripts_dir}/model_lists
 queue="short-serial"
 #max_jobs=1850
@@ -205,8 +205,8 @@ do
                   fi
                 fi
 
-                output=${output_dir}/AnalogueCache_Spatial_${vars_concat}.out
-                error=${output_dir}/AnalogueCache_Spatial_${vars_concat}.err
+                output=${output_dir}/CreateAnalogues_${vars_concat}.out
+                error=${output_dir}/CreateAnalogues_${vars_concat}.err
 
     						${scripts_dir}/queue_spacer_sbatch.sh $max_jobs  # This will check every 120s if I have less than 100 jobs in the Q
 
