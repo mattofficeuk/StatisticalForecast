@@ -4,7 +4,10 @@
 echo "Running for username: $USER"
 usr=$USER
 
-scripts_dir="$(dirname "`pwd`")"
+# To store general bash functions
+source general.sh
+setScriptDirectory  # Stored in general.sh. This sets $scripts_dir
+
 output_dir=/work/scratch-nopw/${usr}/output3b
 analogue_datadir_in=/work/scratch-nopw/${usr}/AnalogueCache
 runscript=${scripts_dir}/STEP3b_PickAnalogues_CalculateSkill_Maps/PickAnalogues_CreateSkill_Maps.py

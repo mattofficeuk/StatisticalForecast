@@ -22,5 +22,5 @@ else
   echo "chmod u+x $this_file"
 fi
 
-echo "chmod u+x queue_spacer_sbatch.sh"
-chmod u+x queue_spacer_sbatch.sh
+echo "chmod u+x queue_spacer_sbatch.sh bash_modules/general.sh"
+chmod u+x queue_spacer_sbatch.sh bash_modules/general.sh

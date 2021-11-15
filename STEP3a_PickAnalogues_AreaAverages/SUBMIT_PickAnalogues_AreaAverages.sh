@@ -13,10 +13,11 @@ testing="True"
 echo "Running for username: $USER"
 usr=$USER
 
-# Jasmin
+# To store general bash functions
+source general.sh
+setScriptDirectory  # Stored in general.sh. This sets $scripts_dir
+
 output_dir=/work/scratch-nopw/${usr}/output3a
-# scripts_dir=/home/users/${usr}/python/scripts
-scripts_dir="$(dirname "`pwd`")"
 analogue_datadir_in=/work/scratch-nopw/${usr}/AnalogueCache
 runscript=${scripts_dir}/STEP3a_PickAnalogues_AreaAverages/PickAnalogues_AreaAverages.py
 queue="short-serial"

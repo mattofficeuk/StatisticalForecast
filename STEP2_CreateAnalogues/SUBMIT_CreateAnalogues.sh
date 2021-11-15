@@ -16,9 +16,10 @@ save_trends_file=/home/users/${usr}/python/scripts/InputFilesList3_ANNUAL_ANALOG
 typeset -l choice  # To ignore case
 choice=$1
 
-# Jasmin
-# scripts_dir=/home/users/${usr}/python/scripts
-scripts_dir="$(dirname "`pwd`")"
+# To store general bash functions
+source general.sh
+setScriptDirectory  # Stored in general.sh. This sets $scripts_dir
+
 output_dir=/work/scratch-nopw/${usr}/output2
 analogue_datadir_in=/work/scratch-nopw/${usr}/AnalogueCache
 datadir=/work/scratch-nopw/${usr}/CMIP_${var}
