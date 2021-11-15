@@ -141,7 +141,7 @@ do
       else
         experiment_and_ens=${experiment}-${ens_mem}
       fi
-      ls ${datadir}/*_${var}_${model}_${experiment_and_ens}_Annual.pkl > /dev/null 2>&1
+      ls ${datadir}/*_${var}*_${model}_${experiment_and_ens}_Annual.nc > /dev/null 2>&1
       err=$?
       if [[ $err != 0 ]]
       then
