@@ -11,9 +11,11 @@ usr=$USER
 typeset -l choice  # To ignore case
 choice=$1
 
-# To store general bash functions
-source general.sh
-setScriptDirectory  # Stored in general.sh. This sets $scripts_dir
+scripts_dir=${ANALOGUE_SCRIPTS_DIR:-"UNSET"}
+if [[ $scripts_dir == "UNSET" ]]
+then
+  echo -e "\nANALOGUE_SCRIPTS_DIR is not set. Run setup.sh and re-source .bash_profile\n"
+fi
 
 output_dir=/work/scratch-nopw/${usr}/output
 datadir=/work/scratch-nopw/${usr}/CMIP_${var}
@@ -21,9 +23,6 @@ runscript=${scripts_dir}/STEP1_PreProcessing/${var}_CMIP.py
 lists_dir=${scripts_dir}/model_lists
 queue="short-serial"
 max_jobs=5000
-
-echo $scripts_dir
-exit
 
 export PYTHONPATH="$scripts_dir/python_modules/:${PYTHONPATH}"
 

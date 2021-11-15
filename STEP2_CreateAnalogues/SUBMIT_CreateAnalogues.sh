@@ -16,9 +16,11 @@ save_trends_file=/home/users/${usr}/python/scripts/InputFilesList3_ANNUAL_ANALOG
 typeset -l choice  # To ignore case
 choice=$1
 
-# To store general bash functions
-source general.sh
-setScriptDirectory  # Stored in general.sh. This sets $scripts_dir
+scripts_dir=${ANALOGUE_SCRIPTS_DIR:-"UNSET"}
+if [[ $scripts_dir == "UNSET" ]]
+then
+  echo -e "\nANALOGUE_SCRIPTS_DIR is not set. Run setup.sh and re-source .bash_profile\n"
+fi
 
 output_dir=/work/scratch-nopw/${usr}/output2
 analogue_datadir_in=/work/scratch-nopw/${usr}/AnalogueCache

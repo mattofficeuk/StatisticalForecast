@@ -25,12 +25,14 @@ Code and instructions for making analogue/statistical forecasts using CMIP5/6 da
 3. DONE LEO - Include a 'testing' function for the scripts to enable quick development and trouble shooting
 
 ## Very general workflow
+0. Within the `StatisticalForecast` directory, run `setup.sh` to set the global paths the scripts will use
 1. `STEP1_PreProcessing`: Run `SUBMIT_ProcessVarsCMIP.sh` with some input (e.g. `cmip6` ) to create the pre-processed data
 2. `STEP2_CreateAnalogues`: Run `SUBMIT_CreateAnalogues.sh` (which calls `CreateAnalogues.py` ) to create the analogues based on choices specified in the `SUBMIT` file
 3. `STEP3a_PickAnalogues_AreaAverages`: Run `SUBMIT_PickAnalogues_AreaAverages.sh` (which calls `PickAnalogues_AreaAverages.py` ) to _pick_ the analogues based on choices specified in the `SUBMIT` file. Note: This is for the area-averaged (e.g. SPG area average) indices. The analogues that were chosen are saved as output and you can then visualise these and combine them in different ways (leading to different skill estimates) in the associated Python Notebook scripts (TODO: Matt to add these)
 4. `STEP3b_PickAnalogues_CalculateSkill_Maps`: Run `SUBMIT_PickAnalogues_CalculateSkill_Maps.sh` (which calls `PickAnalogues_CreateSkill_Maps.py` ) to do both _pick_ and _calculate the skill_ of a combination of analogues. The skill is also calculated here as it is very memory intensive (and slow) working with spatial data, so to do this in interactive notebooks would be hard.
 
 ## Description of files
+- `SETUP_RunThisTheFirstTime.sh.sh` - Sets up paths. Run this first
 - `SUBMIT*` - wrapper scripts (Shell) that take some input (e.g. `cmip6` - see scripts) and submit jobs to the Jasmin queues, calling the python scripts
 - `queue_spacer_sbatch.sh` - A script to ensure we don't submit too many jobs at once. I'm not sure if this is necessary
 - `analogue.py` and `cmip.py` and `mfilter.py` - Somewhere where I have stored custom code relevant for this work
