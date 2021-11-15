@@ -138,9 +138,12 @@ target_saved_filled = target_saved_base.format(analogue_var, target_domain_strin
 target_saved_file = os.path.join(processed_output_dir, target_saved_filled)
 print(target_saved_file)
 if os.path.isfile(target_saved_file):
-    print("Loading time-saver target data:  {:s}".format(target_saved_file))
-    with open(target_saved_file, 'rb') as handle:
-        target_saved = pickle.load(handle)   # MUST BE CHANGED ON SECOND RUN!
+    #print("Loading time-saver target data:  {:s}".format(target_saved_file))
+    #with open(target_saved_file, 'rb') as handle:
+    #    target_saved = pickle.load(handle)   # MUST BE CHANGED ON SECOND RUN!
+    target_saved = xr.open_dataset(target_saved_file).to_dict()
+    print('Loading time-saver target data:  {:s}'.format(target_saved_file))
+    #target_saved = target_saved1.values
 else:
     target_saved = {}
 target_keys = target_saved.keys()
