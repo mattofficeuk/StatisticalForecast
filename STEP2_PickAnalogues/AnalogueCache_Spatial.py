@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 # The above is required for sbatch submission
 
+# I (Matt) think this is probably deprecated now
+raise ValueError("Is this deprecated?")
+
 residual = False
 method='RMSE'  # Overwrite the "spatial correlation" with RMSE instead
 # analogue_var = 'DepthAverageT'

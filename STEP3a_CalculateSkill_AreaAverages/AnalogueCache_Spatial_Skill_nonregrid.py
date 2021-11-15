@@ -1,6 +1,15 @@
 #!/usr/bin/env python3
 # The above is required for sbatch submission
 
+# ==============
+# This script constructs the (area-averaged) annual-mean forecasts based on the chosen analogue selection criteria.
+# It no longer actually calculates the skill as there are still different ways that you could combine these forecasts
+# that would result in different levels of skill. That part is done in some python notebooks that allow for quicker
+# visualisation of the effects of different choices.
+# NOTE: For the case of the maps (STEP3b), the skill _is_ calculated in these Python scripts, as the amount of data
+# makes it inpractical to do that in notebooks.
+# ==============
+
 glob_only = False
 residual = False
 look_for_globbed_savefile = False
@@ -20,19 +29,19 @@ import hashlib
 # ==============
 # Constants we're reading in
 # ==============
-analogue_var = sys.argv[1]
-forecast_var = sys.argv[2]
-target_region = sys.argv[3]  # The region where we measure the skill
-num_mems_to_take = np.int(sys.argv[4])
-window = np.int(sys.argv[5])
-target_domain_string = sys.argv[6]   # The region we used to create the analogues
-smoothing = np.int(sys.argv[7])
-testing = sys.argv[8]
-pass_number = np.int(sys.argv[9])
-method = sys.argv[10]
-subset = sys.argv[11]
-clim_string = sys.argv[12]
-concatenate_string = sys.argv[13]
+analogue_var = sys.argv[1]              # The variable used when creating the analogues
+forecast_var = sys.argv[2]              # The variable we are forecasting
+target_region = sys.argv[3]             # The region where we measure the skill
+num_mems_to_take = np.int(sys.argv[4])  # The number of ensemble members to use
+window = np.int(sys.argv[5])            # The window over which the analogue goodness was computed
+target_domain_string = sys.argv[6]      # The region we used to create the analogues
+smoothing = np.int(sys.argv[7])         # Whether the analogue data was pre-smoothed (and by how much)
+testing = sys.argv[8]                   # Testing mode
+pass_number = np.int(sys.argv[9])       # When picking the analogues, multiple passes might be required
+method = sys.argv[10]                   # How were the analogues created? Currently "Corr" or "RMSE" methods
+subset = sys.argv[11]                   # Whether to only pick from a subset of experients (investigating forcing)
+clim_string = sys.argv[12]              # The climatology period used in analogues and observations
+concatenate_string = sys.argv[13]       # Whether to analogues where we previously concatenated the historical+scenario runs
 
 picontrols_only = False
 skip_local_hist = False

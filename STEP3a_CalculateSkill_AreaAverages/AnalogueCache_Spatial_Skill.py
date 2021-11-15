@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # The above is required for sbatch submission
 
+raise ValueError("Deprecated?")
+
 glob_only = False
 residual = False
 look_for_globbed_savefile = False
@@ -20,15 +22,15 @@ import hashlib
 # ==============
 # Constants we're reading in
 # ==============
-analogue_var = sys.argv[1]
-forecast_var = sys.argv[2]
-target_region = sys.argv[3]  # The region where we measure the skill
-num_mems_to_take = np.int(sys.argv[4])
-window = np.int(sys.argv[5])
-target_domain_string = sys.argv[6]   # The region we used to create the analogues
-smoothing = np.int(sys.argv[7])
-testing = sys.argv[8]
-pass_number = np.int(sys.argv[9])
+analogue_var = sys.argv[1]              # The variable used when creating the analogues
+forecast_var = sys.argv[2]              # The variable we are forecasting
+target_region = sys.argv[3]             # The region where we measure the skill
+num_mems_to_take = np.int(sys.argv[4])  # The number of ensemble members to use
+window = np.int(sys.argv[5])            # The window over which the analogue goodness was computed
+target_domain_string = sys.argv[6]      # The region we used to create the analogues
+smoothing = np.int(sys.argv[7])         # Whether the analogue data was pre-smoothed (and by how much)
+testing = sys.argv[8]                   # Testing mode
+pass_number = np.int(sys.argv[9])       # When picking the analogues, multiple passes might be required
 method = sys.argv[10]
 subset = sys.argv[11]
 clim_string = sys.argv[12]
@@ -43,7 +45,7 @@ elif subset == 'skip_local_hist':
     skip_local_hist = True  # Similar to above but remove forcing influence by not letting NEARBY historicals be used
     nearby_hist = 75  # Hist (or hist-aer etc) within this window will not be used
 elif subset == 'strong_forcing_only':
-    strong_forcing_only = True  # Similar to above but remove forcing influence by not letting NEARBY historicals be used
+    strong_forcing_only = True  # Opposite to above - doesn't use any piControl experiments ever
     earliest_hist = 1990  # The earliest year in the hist (or hist-aer etc) experiments to allow for "strong" forcing
 elif subset == 'None':
     pass
@@ -461,43 +463,6 @@ def read_forecast_data(corr_info, nlead):
         print("read_forecast_data forecast_year_obs loop {:.2f}".format((loop_t1 - loop_t0) / 60.))
     return forecast, analogue_means, analogue_sds
 
-# # Calculate the skill
-# def calculate_skill(forecast_in, nlead, multi=False, start_lead=[1], end_lead=[5], since1960=False):
-#     # Calculate the skill, either for each validity time (annual mean)
-#     # or for multi-annual means, using the following pattern:
-#     # 1-5, 2-6, 3-7, 4-8, 5-9, 6-10, 1-10, 2-10
-#     if since1960:
-#         offset1960 = np.argwhere(year_ann == 1960)[0][0]
-#     else:
-#         offset1960 = 0
-#     if not multi:
-#         forecast_skill = np.ma.masked_all(nlead)
-#         for ilead in lead_times:
-#             this_target_ts = target_time_series[offset1960+ilead:]
-#             this_source_ts = forecast_in[offset1960:nyrs-ilead,  ilead]
-#             # print 'this_target_ts', this_target_ts
-#             # print 'this_source_ts', this_source_ts
-#             # print nyrs, ilead, offset1960
-#             real = np.nonzero(this_target_ts *  this_source_ts)
-#             _, _, corr, _, _ = stats.linregress(this_source_ts[real], this_target_ts[real])
-#             forecast_skill[ilead] = corr
-#     elif multi:
-#         forecast_skill = np.ma.masked_all(len(start_lead))
-#         for iforecast, (ss, ee) in enumerate(zip(start_lead, end_lead)):
-#             nleads = (ee + 1 - ss)
-#             this_target_ts = np.zeros(shape=(nyrs - (offset1960 + ee)))
-#             for ilead in range(ss, ee+1, 1):  # +1 to include the end time
-#                 this_target_ts += target_time_series[offset1960+ilead:nyrs-(ee-ilead)]
-#             this_target_ts /= nleads
-#
-#             this_source_ts = np.ma.mean(forecast_in[offset1960:nyrs-ee, ss:ee+1], axis=1)
-#
-#             real = np.nonzero(this_target_ts *  this_source_ts)
-#             _, _, corr, _, _ = stats.linregress(this_source_ts[real], this_target_ts[real])
-#             forecast_skill[iforecast] = corr
-#
-#     return forecast_skill
-
 # To remove elements that are close to each other
 def remove_close(in_arr):  # 2D (nmems by 5)
     if in_arr.ndim == 1:
@@ -623,41 +588,6 @@ print("Time taken do read_forecast_data (trends) = {:.2f} minutes".format((t2 - 
 ann_forecast, ann_forecast_means, ann_forecast_sds = read_forecast_data(ann_corr_info, nlead)
 t3 = time.time()
 print("Time taken do read_forecast_data (annual) = {:.2f} minutes".format((t3 - t2) /60.))
-# print('Creating actual analogue forecasts')
-# trend_forecast_anomt0 = trend_forecast - np.repeat(trend_forecast[:, :, 0][:, :, None], nlead, axis=2)
-# trend_forecast_anomt0_mmm = np.ma.mean(trend_forecast_anomt0, axis=1)
-# trend_forecast_anomt0_mmm_recentred = trend_forecast_anomt0_mmm + np.repeat(target_time_series[:, None],
-#                                                                             nlead, axis=1)
-#
-# ann_forecast_anomt0 = ann_forecast - np.repeat(ann_forecast[:, :, 0][:, :, None], nlead, axis=2)
-# ann_forecast_anomt0_mmm = np.ma.mean(ann_forecast_anomt0, axis=1)
-# ann_forecast_anomt0_mmm_recentred = ann_forecast_anomt0_mmm + np.repeat(target_time_series[:, None], nlead, axis=1)
-#
-# print('Creating skill of analogue forecasts')
-# trend_forecast_skill = calculate_skill(trend_forecast_anomt0_mmm_recentred, nlead)
-# ann_forecast_skill = calculate_skill(ann_forecast_anomt0_mmm_recentred, nlead)
-# trend_forecast_skill1960 = calculate_skill(trend_forecast_anomt0_mmm_recentred, nlead, since1960=True)
-# ann_forecast_skill1960 = calculate_skill(ann_forecast_anomt0_mmm_recentred, nlead, since1960=True)
-#
-# print('Creating multiannual mean skill of analogue forecasts')
-# trend_forecast_multiskill = calculate_skill(trend_forecast_anomt0_mmm_recentred, nlead, multi=True,
-#                                             start_lead=start_lead, end_lead=end_lead)
-# ann_forecast_multiskill = calculate_skill(ann_forecast_anomt0_mmm_recentred, nlead, multi=True,
-#                                           start_lead=start_lead, end_lead=end_lead)
-# trend_forecast_multiskill1960 = calculate_skill(trend_forecast_anomt0_mmm_recentred, nlead, multi=True,
-#                                                 start_lead=start_lead, end_lead=end_lead, since1960=True)
-# ann_forecast_multiskill1960 = calculate_skill(ann_forecast_anomt0_mmm_recentred, nlead, multi=True,
-#                                               start_lead=start_lead, end_lead=end_lead, since1960=True)
-#
-# with open(skill_file, 'wb') as handle:
-#     print "Writing save file: {:s}".format(skill_file)
-#     skill_data = [ann_corr_info, ann_forecast, ann_forecast_means, ann_forecast_sds,
-#                   ann_forecast_anomt0_mmm_recentred, ann_forecast_skill,
-#                   ann_forecast_skill1960, ann_forecast_multiskill, ann_forecast_multiskill1960,
-#                   trend_corr_info, trend_forecast, trend_forecast_means, trend_forecast_sds,
-#                   trend_forecast_anomt0_mmm_recentred, trend_forecast_skill,
-#                   trend_forecast_skill1960, trend_forecast_multiskill, trend_forecast_multiskill1960]
-#     pickle.dump(skill_data, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 with open(skill_file, 'wb') as handle:
     print("Writing save file: {:s}".format(skill_file))
