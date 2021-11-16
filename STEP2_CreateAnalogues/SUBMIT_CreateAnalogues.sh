@@ -146,7 +146,7 @@ do
       if [[ $err != 0 ]]
       then
         echo "No input data exists - skipping"
-        echo "/${datadir}/*_${var}_${model}_${experiment_and_ens}_Annual.pkl"
+        echo "/${datadir}/*_${var}_${model}_${experiment_and_ens}_Annual.nc"
         continue
       fi
 
@@ -196,7 +196,7 @@ do
                   # will end up being be a concatenated output or not
                   if [[ $experiment != "historical" || $concatenate_string == "False" ]]
                   then
-                    check_file=${analogue_datadir}/${var}_${target_domain}_${model}_${experiment}-${ens_mem}_Window${window}${smoothing_string}_SpatialProcessed${rmse_string}${test_string}.pkl
+                    check_file=${analogue_datadir}/${var}_${target_domain}_${model}_${experiment}-${ens_mem}_Window${window}${smoothing_string}_SpatialProcessed${rmse_string}${test_string}.nc
                     echo "Checking: ${check_file}"
                     ls ${check_file} > /dev/null 2>&1
                     err=$?

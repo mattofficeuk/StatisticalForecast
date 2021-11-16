@@ -164,7 +164,7 @@ if save_trends:
     if processed_filled not in requested_files:
         raise ValueError('Will not continue. Only saving trends files and this one is not requested: {:s}'.format(processed_filled))
 
-    trends_base = '{:s}_SavedTrends_{:s}_{:s}_{:s}-{:s}_Window{:d}{:s}_Spatial{:s}Processed{:s}{:s}.pkl'
+    trends_base = '{:s}_SavedTrends_{:s}_{:s}_{:s}-{:s}_Window{:d}{:s}_Spatial{:s}Processed{:s}{:s}.nc'
     trends_filled = trends_base.format(analogue_var, target_domain_string, model, experiment, ens_mem, window,
                                        smoothing_string, residual_string, testing_string, rmse_string)
     trends_file = os.path.join(processed_output_dir, trends_filled)
@@ -197,7 +197,9 @@ else:
     raise ValueError("Unknown model")
 
 if experiment == 'piControl':
-    base_file = '{:s}_{:s}_{:s}_{:s}_Annual.pkl'.format(project, analogue_var, model, experiment)
+    base_file_field = '{:s}_{:s}field_{:s}_{:s}_Annual.nc'.format(project, analogue_var, model, experiment)
+    base_file_timeser = '{:s}_{:s}timeser_{:s}_{:s}_Annual.nc'.format(project, analogue_var, model, experiment)
+    base_file_mask = '{:s}_{:s}mask_{:s}_{:s}_Annual.nc'.format(project, analogue_var, model, experiment)
 else:
     base_file_field = '{:s}_{:s}field_{:s}_{:s}-{:s}_Annual.nc'.format(project, analogue_var, model, experiment, ens_mem)
     base_file_timeser = '{:s}_{:s}timeser_{:s}_{:s}-{:s}_Annual.nc'.format(project, analogue_var, model, experiment, ens_mem)
