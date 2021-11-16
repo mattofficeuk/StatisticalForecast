@@ -298,13 +298,11 @@ lon_bnds_vertices[lon_bnds_vertices > 180] -= 360
 # ==================
 # Figure out the size of the output SST array
 # ==================
-print("Estimating number of time steps...")
 ntimes_total = 0
 for ifile, thetao_file in enumerate(thetao_files):
     loaded = netCDF4.Dataset(thetao_file)
     time = loaded.variables['time'][:]
     ntimes_total += len(time)
-print("... Done!")
 
 ntimes_total_max = ntimes_total
 ntimes_total = int(np.min([ntimes_total, 12 * 500]))  # Max 500 years (memory)
@@ -318,7 +316,6 @@ print("Creating large numpy arrays: ntimes_total = ", ntimes_total, nj, ni)
 sst_global = np.ma.masked_all(shape=(ntimes_total, nj, ni))
 year = np.ma.masked_all(shape=(ntimes_total))
 mon = np.ma.masked_all(shape=(ntimes_total))
-print("... Done!")
 
 # ==================
 # Prepare the sst_ts dictionary (to avoid reading in both
@@ -578,7 +575,7 @@ else:
         pickle.dump([sst_ann, sst_ts_ann, area, lon, lat, year_ann, season], handle, protocol=pickle.HIGHEST_PROTOCOL)
     else:
         sst_timesers.to_netcdf(path=save_file_ann_timeser,format="NETCDF4")
-        sst_field.to_netcdf(path=save_file_ann_field,format="NETCDF4")
+        sst_field.to_netcdf(path=save_file_ann_field,format="NETCDF4") 
         sst_mask.to_netcdf(path=save_file_ann_mask,format="NETCDF4")
 
 print("DONE!")
