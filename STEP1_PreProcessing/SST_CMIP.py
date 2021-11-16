@@ -306,7 +306,7 @@ for ifile, thetao_file in enumerate(thetao_files):
 
 ntimes_total_max = ntimes_total
 ntimes_total = int(np.min([ntimes_total, 12 * 500]))  # Max 500 years (memory)
-print("ntimes_total could be as high as {:s}. It is set to {:s}".format(ntimes_total_max, ntimes_total))
+print("ntimes_total could be as high as {:d}. It is set to {:d}".format(ntimes_total_max, ntimes_total))
 
 nj, ni = lon.shape
 print("Creating large numpy arrays: ntimes_total = ", ntimes_total, nj, ni)
@@ -575,7 +575,7 @@ else:
         pickle.dump([sst_ann, sst_ts_ann, area, lon, lat, year_ann, season], handle, protocol=pickle.HIGHEST_PROTOCOL)
     else:
         sst_timesers.to_netcdf(path=save_file_ann_timeser,format="NETCDF4")
-        sst_field.to_netcdf(path=save_file_ann_field,format="NETCDF4") 
+        sst_field.to_netcdf(path=save_file_ann_field,format="NETCDF4")
         sst_mask.to_netcdf(path=save_file_ann_mask,format="NETCDF4")
 
 print("DONE!")
