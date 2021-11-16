@@ -80,7 +80,6 @@ already_read_basin = False
 already_read_salinity = False
 radius_earth = 6371229.
 deg2rad = np.pi / 180.
-exit_loops = False
 regions = ['north_atlantic', 'subpolar_gyre', 'intergyre', 'tropical_atlantic_north',
            'tropical_atlantic_south', 'global', 'global60', 'nh', 'spg_rahmstorf',
            'spg_menary18', 'spg_leo20']
@@ -299,36 +298,66 @@ lon_bnds_vertices[lon_bnds_vertices > 180] -= 360
 # Figure out the size of the output SST array
 # ==================
 ntimes_total = 0
+years = []
 for ifile, thetao_file in enumerate(thetao_files):
     loaded = netCDF4.Dataset(thetao_file)
     time = loaded.variables['time'][:]
-    ntimes_total += len(time)
+    ntimes = len(time)
+    ntimes_total += ntimes
 
-ntimes_total_max = ntimes_total
-ntimes_total = int(np.min([ntimes_total, 12 * 500]))  # Max 500 years (memory)
-print("ntimes_total could be as high as {:d}. It is set to {:d}".format(ntimes_total_max, ntimes_total))
+    t0, t1 = os.path.basename(thetao_file).split('_')[-1].split('.nc')[0].split('-')
+    y0, y1 = int(t0[:4]), int(t1[:4])
+    m0, m1 = int(t0[4:]), int(t1[4:])
+
+    for tt in range(ntimes):
+        year = y0 + (tt // 12)
+        years.append(year)
+
+# For both annual AND seasonal, we are going to ignore years that aren't full (12 months)
+year_ann, counts = np.unique(years, return_counts=True)
+year_ann = year_ann[counts == 12].astype('int')
+print("Unique, full years are:", year_ann)
+
+if seasonal:
+    ntimes_to_keep_while_working = 3
+    nseasons = 4
+else:
+    ## Annual
+    ntimes_to_keep_while_working = 12
+    nseasons = 1
+
+ntimes_output = len(year_ann) * nseasons
+
+# ntimes_total_max = ntimes_total
+# ntimes_total = int(np.min([ntimes_total, 12 * 500]))  # Max 500 years (memory)
+# print("ntimes_total could be as high as {:d}. It is set to {:d}".format(ntimes_total_max, ntimes_total))
 
 nj, ni = lon.shape
-print("Creating large numpy arrays: ntimes_total = ", ntimes_total, nj, ni)
+print("Creating large numpy arrays: ntimes_output, nj, ni = ", ntimes_output, nj, ni)
 ## Removed to save memory. It was only being used for time series,
 ## so "sst" has been moved to within the loop now
 # sst = np.ma.masked_all(shape=(ntimes_total, nj, ni))
-sst_global = np.ma.masked_all(shape=(ntimes_total, nj, ni))
-year = np.ma.masked_all(shape=(ntimes_total))
-mon = np.ma.masked_all(shape=(ntimes_total))
+sst_ann = np.ma.masked_all(shape=(ntimes_output, nj, ni))
 
 # ==================
 # Prepare the sst_ts dictionary (to avoid reading in both
 ## "sst_global" and "sst" array, to save memory)
 # ==================
-sst_ts = {}
+sst_ts_ann = {}
 for region in regions:
-    sst_ts[region] = np.ma.masked_all(shape=(ntimes_total))
+    sst_ts_ann[region] = np.ma.masked_all(shape=(ntimes_output))
+
+# These are the working arrays
+sst_atlantic_working = np.ma.masked_all(shape=(ntimes_to_keep_while_working, nj, ni))
+sst_global_working = np.ma.masked_all(shape=(ntimes_to_keep_while_working, nj, ni))
+year_working = np.ma.masked_all(shape=(ntimes_to_keep_while_working))
+mon_working = np.ma.masked_all(shape=(ntimes_to_keep_while_working))
 
 # ==================
 # Read the thetao data and make the SST
 # ==================
-tt2 = 0
+tt2 = -1
+exit_loops = False
 for ifile, thetao_file in enumerate(thetao_files):
     if exit_loops: break
     print(thetao_file)
@@ -342,6 +371,7 @@ for ifile, thetao_file in enumerate(thetao_files):
     m0, m1 = int(t0[4:]), int(t1[4:])
 
     for tt in range(ntimes):
+        tt2 += 1
         if exit_loops: break
         print("{:4d} of {:4d} in this file, {:4d} of {:4d} overall".format(tt, ntimes, tt2, ntimes_total))
         thetao = loaded.variables['thetao'][tt, 0, :, :]
@@ -416,76 +446,69 @@ for ifile, thetao_file in enumerate(thetao_files):
             else:
                 kelvin_offset = 0.
 
-        # Make the SST
-        sst_atlantic_masked = thetao_masked - kelvin_offset
-        sst_global_masked   = thetao_global - kelvin_offset
+        # Make the SST and store it in the working arrays. After these reach "full" then take the time mean
+        # and then compute the area averages
+        tt2_mod = tt2 % ntimes_to_keep_while_working
+        sst_atlantic_working[tt2_mod, :, :] = thetao_masked - kelvin_offset
+        sst_global_working[tt2_mod, :, :]   = thetao_global - kelvin_offset
 
-        for region in regions:
-            if region in ['global', 'global60', 'nh']:
-                ## newaxis required to make sst 3D
-                sst_area_averaged = make_ts_2d(sst_atlantic_masked[np.newaxis, :, :], lon, lat, area, region)
-            else:
-                sst_area_averaged = make_ts_2d(sst_global_masked[np.newaxis, :, :], lon, lat, area, region)
-            sst_ts[region][tt2] = sst_area_averaged
+        year_working[tt2_mod] = y0 + (tt // 12)      # Goes up by 1 every 12 indices (i.e. months)
+        mon_working[tt2_mod]  = m0 + (tt % 12)       # Goes up by 1, looping every 12 (i.e. annually)
 
-        year[tt2] = y0 + (tt // 12)
-        mon[tt2] = m0 + (tt % 12)
-        tt2 += 1
+        # Check and see if we have enough data to make a seasonal or annual mean
+        indices_for_meaning = [-1, -1, -1]
+        index_of_timemean = -1
+        reached_meaning_window = False
+        if seasonal:
+            # Check each season. If we have the correct months for a seasonal mean stored in the working arrays then
+            # store the indices of these and work out the index in the target TIME MEAN array. Then stop searching.
+            for season_index in range(nseasons):
+                ind = np.argwhere((mon_working == (season_index * 3 + 1)) | (mon_working == (season_index * 3 + 2)) | (mon_working == (season_index * 3 + 3)))
+                if len(ind) == ntimes_to_keep_while_working:
+                    assert year_working[ind[0]] == year_working[ind[-1]]  ## Should both be the same year (as we aren't using Dec in winter means)
+                    indices_for_meaning = ind.flatten()
+                    year_index = np.argwhere(year_ann == year_working[ind[0]])
+                    index_of_timemean = year_index + season_index
+                    reached_meaning_window = True
+                    break
+        else:
+            # Check each year. If we have the correct months for an annual mean stored in the working arrays then
+            # store the indices of these and work out the index in the target TIME MEAN array. Then stop searching.
+            for year_index, possible_year in enumerate(year_ann):
+                ind = np.argwhere(year_working == possible_year)
+                if len(ind) == ntimes_to_keep_while_working:
+                    indices_for_meaning = ind.flatten()
+                    index_of_timemean = year_index
+                    reached_meaning_window = True
+                    break
 
-        if tt2 >= ntimes_total:
-            exit_loops = True
+        if reached_meaning_window:
+            sst_atlantic_masked = sst_atlantic_working[indices_for_meaning, :, :].mean(axis=0, keepdims=True)
+            sst_global_masked = sst_global_working[indices_for_meaning, :, :].mean(axis=0, keepdims=True)
 
-        if TESTING:
-            if tt2 >= max_times:
-                exit_loops = True
+            print("sst_global_masked.shape", sst_global_masked.shape, sst_global_working.shape)
+
+            for region in regions:
+                if region in ['global', 'global60', 'nh']:
+                    sst_area_averaged = make_ts_2d(sst_global_masked, lon, lat, area, region)
+                else:
+                    sst_area_averaged = make_ts_2d(sst_atlantic_masked, lon, lat, area, region)
+                sst_ts_ann[region][index_of_timemean] = sst_area_averaged
+
+            sst_ann[index_of_timemean, :, :] = sst_global_masked
+
+        # year[tt2] = y0 + (tt // 12)
+        # mon[tt2] = m0 + (tt % 12)
+        # tt2 += 1
+
+        # if tt2 >= ntimes_total:
+        #     exit_loops = True
+        #
+        # if TESTING:
+        #     if tt2 >= max_times:
+        #         exit_loops = True
 
     loaded.close()
-
-time = year + (mon - 1) / 12.
-
-# ==================
-# Premake some time series
-# ==================
-# sst_ts = {}
-# for region in regions:
-#     print("Making SST average for {:s}".format(region))
-#     if region in ['global', 'global60', 'nh']:
-#         sst_ts[region] = make_ts_2d(sst_global, lon, lat, area, region)
-#     else:
-#         sst_ts[region] = make_ts_2d(sst, lon, lat, area, region)
-
-# ==================
-# Make annual mean versions
-# ==================
-nt, nj, ni = sst_global.shape
-year_ann, counts = np.unique(year, return_counts=True)
-year_ann = year_ann[counts == 12].astype('int')
-
-if seasonal:
-    # season = np.repeat(np.transpose((np.arange(4) + 1)[:, np.newaxis]), np.floor(len(year) / 4), axis=0).flatten()
-    nseasons = 4
-else:
-    # season = np.ones(shape=year.shape)
-    nseasons = 1
-seasonal_cycle = np.arange(nseasons) + 1
-
-sst_ann = np.ma.masked_all(shape=(len(year_ann) * nseasons, nj, ni))  # maps
-sst_ts_ann = {}  # time series
-for region in regions:
-    sst_ts_ann[region] = np.ma.masked_all(shape=len(year_ann) * nseasons)
-
-for iyr, yy in enumerate(year_ann):
-    for iseason, ss in enumerate(seasonal_cycle):
-        if seasonal:
-            ind = np.argwhere((year == yy) & ((mon == (iseason * 3 + 1)) | (mon == (iseason * 3 + 2)) | (mon == (iseason * 3 + 3))))
-        else:
-            ind = np.argwhere((year == yy))
-
-        sst_ann[iyr * nseasons + iseason, :, :] = sst_global[ind, :, :].mean(axis=0)
-        for region in regions:
-            sst_ts_ann[region][iyr * nseasons + iseason] = sst_ts[region][ind].mean(axis=0)
-
-#sst_timesers = xr.DataArray(sst_ts_ann['north_atlantic'], name='SST', dims = ['time'], coords = {'time': (['time'],year_ann)})
 
 for region in regions:
     if region == 'north_atlantic':
@@ -498,51 +521,6 @@ print(sst_ann.shape)
 sst_field = xr.DataArray(sst_ann, name='SST', dims = ['time','y','x'], coords = {'time': (['time'],year_ann), 'lat': (['y','x'],lat), 'lon': (['y','x'],lon)}).to_dataset(name='SST')
 
 sst_mask = xr.DataArray(sst_ann[:,:,:].mask, name="mask", dims = ['time','y','x'], coords = {'time': (['time'],year_ann), 'lat': (['y','x'],lat), 'lon': (['y','x'],lon)}).to_dataset(name='mask')
-
-# ==================
-# Do some regridding
-# ==================
-# nt_in, _, _ = sst_ann.shape
-# nj = 180
-# ni = 360
-# lon_re = np.repeat((np.arange(-180, 180) + 0.5)[np.newaxis, :], nj, axis=0)
-# lat_re = np.repeat((np.arange(-90, 90) + 0.5)[:, None], ni, axis=1)
-# sst_regridded = np.ma.masked_all(shape=(nt_in, nj, ni))
-#
-# for tt in range(nt_in):
-#     print('Regridding SST map {:d}'.format(tt))
-#     sst_regridded[tt, :, :] = interpolate.griddata(np.array([lat.ravel(), lon.ravel()]).T,
-#                                                    sst_ann[tt, :, :].ravel(), (lat_re, lon_re),
-#                                                    method='linear')
-# mask_regridded = interpolate.griddata(np.array([lat.ravel(), lon.ravel()]).T,
-#                                       sst_global[0, :, :].mask.ravel(), (lat_re, lon_re),
-#                                       method='linear')
-# sst_regridded = np.ma.array(sst_regridded, mask=np.repeat(mask_regridded[np.newaxis, :, :],
-#                                                            nt_in, axis=0))
-
-# def save_to_netcdf(filename, sst_ts, years):
-#     output = netCDF4.Dataset(filename, 'w', clobber=True, format='NETCDF4')
-#     output.description = 'SPG SST time series [10W,50W][45N-60N]. Created on Ciclad (IPSL) by Matthew Menary: {:s}'.format(time_module.ctime())
-#     output.experiment = experiment
-#     output.model = model
-#     output.ens_mem = ens_mem
-#     output.createDimension('time', None)
-#
-#     field1 = output.createVariable('time', 'f8', ('time',))
-#     field1[:] = (years.data - 1850) * 365
-#     field1.units = "days since 1850-01-01 00:00:00"
-#     field1.calendar = "365_day"
-#     field1.long_name = "Verification time of the forecast"
-#     field1.standard_name = "time"
-#
-#     field2 = output.createVariable('tos', 'f8', ('time',))
-#     field2[:] = sst_ts
-#     field2.units = "K"
-#     field2.long_name = "Sea Surface Temperature"
-#     field2.standard_name = "sea_surface_temperature"
-#
-#     output.close()
-#     return True
 
 # ==================
 # Save the data (annual version only?)
@@ -572,7 +550,8 @@ if time_series_only:
     sst_timesers.to_netcdf(path=save_file_ann_timeser,format="NETCDF4")
 else:
     if seasonal:
-        pickle.dump([sst_ann, sst_ts_ann, area, lon, lat, year_ann, season], handle, protocol=pickle.HIGHEST_PROTOCOL)
+        seasonal_cycle = np.arange(nseasons) + 1
+        pickle.dump([sst_ann, sst_ts_ann, area, lon, lat, year_ann, seasonal_cycle], handle, protocol=pickle.HIGHEST_PROTOCOL)
     else:
         sst_timesers.to_netcdf(path=save_file_ann_timeser,format="NETCDF4")
         sst_field.to_netcdf(path=save_file_ann_field,format="NETCDF4")
