@@ -306,7 +306,7 @@ for ifile, thetao_file in enumerate(thetao_files):
 
 ntimes_total_max = ntimes_total
 ntimes_total = int(np.min([ntimes_total, 12 * 500]))  # Max 500 years (memory)
-print("ntimes_total could be as high as {:s}. It is set to {:s}".format(ntimes_total_max, ntimes_total))
+print("ntimes_total could be as high as {:d}. It is set to {:d}".format(ntimes_total_max, ntimes_total))
 
 nj, ni = lon.shape
 print("Creating large numpy arrays: ntimes_total = ", ntimes_total, nj, ni)
