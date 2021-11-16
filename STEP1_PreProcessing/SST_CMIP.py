@@ -105,6 +105,10 @@ elif model in cmip6_models:
 else:
     raise ValueError("Unknown model")
 
+# Models for which we have to use the regridded (not by us, by the centres, which is why we don't want to use it normally) data
+# because the non-regridded is just too large.
+models_requiring_gr = ['GFDL-CM4']
+
 # This is for the DAMIP in CMIP5, where the "p" was used to determine which experiment was being run
 # Unfortunately, this is model dependant. Fortunately, Laura Wilcox made a very helpful table!
 # These "p" values are just for the historicalAA experiment (and historicalAero for CCSM4)
@@ -167,21 +171,26 @@ else:
         raise ValueError(" !! Not sure where this experiment lives")
     if host == 'ciclad': base_path_coords = '/bdd/CMIP6/CMIP'
     if host == 'jasmin': base_path_coords = '/badc/cmip6/data/CMIP6/CMIP'
-    suffices = ['{:s}/r{:s}i1p{:s}f1/Omon/thetao/gn/latest'.format(experiment, ens_mem, perturbed),
-                '{:s}/r{:s}i1p{:s}f2/Omon/thetao/gn/latest'.format(experiment, ens_mem, perturbed),
-                '{:s}/r{:s}i1p{:s}f3/Omon/thetao/gn/latest'.format(experiment, ens_mem, perturbed),
+    if model in models_requiring_gr:
+        print("Defaulting to using data regridded by model institution (gr grid instead of gn)")
+        gn_or_gr = "gr"
+    else:
+        gn_or_gr = "gn"
+    suffices = ['{:s}/r{:s}i1p{:s}f1/Omon/thetao/{:s}/latest'.format(experiment, ens_mem, perturbed, gn_or_gr),
+                '{:s}/r{:s}i1p{:s}f2/Omon/thetao/{:s}/latest'.format(experiment, ens_mem, perturbed, gn_or_gr),
+                '{:s}/r{:s}i1p{:s}f3/Omon/thetao/{:s}/latest'.format(experiment, ens_mem, perturbed, gn_or_gr),
                 '{:s}/r{:s}i1p{:s}f1/Omon/thetao/gr/latest'.format(experiment, ens_mem, perturbed),
                 '{:s}/r{:s}i1p{:s}f1/Omon/thetao/gr1/latest'.format(experiment, ens_mem, perturbed)]
-    Ofx_suffices = ['{:s}/r1i1p{:s}f1/Ofx/areacello/gn/latest'.format(experiment, perturbed),
-                    '{:s}/r1i1p{:s}f2/Ofx/areacello/gn/latest'.format(experiment, perturbed),
+    Ofx_suffices = ['{:s}/r1i1p{:s}f1/Ofx/areacello/{:s}/latest'.format(experiment, perturbed, gn_or_gr),
+                    '{:s}/r1i1p{:s}f2/Ofx/areacello/{:s}/latest'.format(experiment, perturbed, gn_or_gr),
                     '{:s}/r1i1p{:s}f1/Ofx/areacello/gr/latest'.format(experiment, perturbed)]
-    thk_suffices = ['{:s}/r1i1p{:s}f1/Ofx/deptho/gn/latest'.format(experiment, perturbed),
-                    '{:s}/r1i1p{:s}f2/Ofx/deptho/gn/latest'.format(experiment, perturbed),
+    thk_suffices = ['{:s}/r1i1p{:s}f1/Ofx/deptho/{:s}/latest'.format(experiment, perturbed, gn_or_gr),
+                    '{:s}/r1i1p{:s}f2/Ofx/deptho/{:s}/latest'.format(experiment, perturbed, gn_or_gr),
                     '{:s}/r1i1p{:s}f1/Ofx/deptho/gr/latest'.format(experiment, perturbed)]
     if experiment != 'piControl':
-        Ofx_suffices_piControl = ['{:s}/r1i1p1f1/Ofx/areacello/gn/latest'.format('piControl'),
-                                  '{:s}/r1i1p1f2/Ofx/areacello/gn/latest'.format('piControl'),
-                                  '{:s}/r1i1p1f1/Ofx/areacello/gr/latest'.format('piControl')]
+        Ofx_suffices_piControl = ['{:s}/r1i1p1f1/Ofx/areacello/{:s}/latest'.format('piControl', gn_or_gr),
+                                  '{:s}/r1i1p1f2/Ofx/areacello/{:s}/latest'.format('piControl', gn_or_gr),
+                                  '{:s}/r1i1p1f1/Ofx/areacello/gr/latest'.format('piControl', gn_or_gr)]
         for extra_suffix in Ofx_suffices_piControl:
             Ofx_suffices.append(extra_suffix)
 
@@ -297,15 +306,27 @@ for ifile, thetao_file in enumerate(thetao_files):
     ntimes_total += len(time)
 print("... Done!")
 
+ntimes_total_max = ntimes_total
 ntimes_total = int(np.min([ntimes_total, 12 * 500]))  # Max 500 years (memory)
+print("ntimes_total could be as high as {:s}. It is set to {:s}".format(ntimes_total_max, ntimes_total))
 
-print("Creating large numpy arrays: ntimes_total = ", ntimes_total)
 nj, ni = lon.shape
-sst = np.ma.masked_all(shape=(ntimes_total, nj, ni))
+print("Creating large numpy arrays: ntimes_total = ", ntimes_total, nj, ni)
+## Removed to save memory. It was only being used for time series,
+## so "sst" has been moved to within the loop now
+# sst = np.ma.masked_all(shape=(ntimes_total, nj, ni))
 sst_global = np.ma.masked_all(shape=(ntimes_total, nj, ni))
 year = np.ma.masked_all(shape=(ntimes_total))
 mon = np.ma.masked_all(shape=(ntimes_total))
 print("... Done!")
+
+# ==================
+# Prepare the sst_ts dictionary (to avoid reading in both
+## "sst_global" and "sst" array, to save memory)
+# ==================
+sst_ts = {}
+for region in regions:
+    sst_ts[region] = np.ma.masked_all(shape=(ntimes_total))
 
 # ==================
 # Read the thetao data and make the SST
@@ -399,9 +420,16 @@ for ifile, thetao_file in enumerate(thetao_files):
                 kelvin_offset = 0.
 
         # Make the SST
-        sst[tt2, :, :] = thetao_masked - kelvin_offset
-        sst_global[tt2, :, :] = thetao_global - kelvin_offset
+        sst_atlantic_masked = thetao_masked - kelvin_offset
+        sst_global_masked   = thetao_global - kelvin_offset
 
+        for region in regions:
+            if region in ['global', 'global60', 'nh']:
+                ## newaxis required to make sst 3D
+                sst_area_averaged = make_ts_2d(sst_atlantic_masked[np.newaxis, :, :], lon, lat, area, region)
+            else:
+                sst_area_averaged = make_ts_2d(sst_global_masked[np.newaxis, :, :], lon, lat, area, region)
+            sst_ts[region][tt2] = sst_area_averaged
 
         year[tt2] = y0 + (tt // 12)
         mon[tt2] = m0 + (tt % 12)
@@ -414,23 +442,25 @@ for ifile, thetao_file in enumerate(thetao_files):
             if tt2 >= max_times:
                 exit_loops = True
 
+    loaded.close()
+
 time = year + (mon - 1) / 12.
 
 # ==================
 # Premake some time series
 # ==================
-sst_ts = {}
-for region in regions:
-    print("Making SST average for {:s}".format(region))
-    if region in ['global', 'global60', 'nh']:
-        sst_ts[region] = make_ts_2d(sst_global, lon, lat, area, region)
-    else:
-        sst_ts[region] = make_ts_2d(sst, lon, lat, area, region)
+# sst_ts = {}
+# for region in regions:
+#     print("Making SST average for {:s}".format(region))
+#     if region in ['global', 'global60', 'nh']:
+#         sst_ts[region] = make_ts_2d(sst_global, lon, lat, area, region)
+#     else:
+#         sst_ts[region] = make_ts_2d(sst, lon, lat, area, region)
 
 # ==================
 # Make annual mean versions
 # ==================
-nt, nj, ni = sst.shape
+nt, nj, ni = sst_global.shape
 year_ann, counts = np.unique(year, return_counts=True)
 year_ann = year_ann[counts == 12].astype('int')
 
@@ -475,23 +505,23 @@ sst_mask = xr.DataArray(sst_ann[:,:,:].mask, name="mask", dims = ['time','y','x'
 # ==================
 # Do some regridding
 # ==================
-nt_in, _, _ = sst_ann.shape
-nj = 180
-ni = 360
-lon_re = np.repeat((np.arange(-180, 180) + 0.5)[np.newaxis, :], nj, axis=0)
-lat_re = np.repeat((np.arange(-90, 90) + 0.5)[:, None], ni, axis=1)
-sst_regridded = np.ma.masked_all(shape=(nt_in, nj, ni))
-
-for tt in range(nt_in):
-    print('Regridding SST map {:d}'.format(tt))
-    sst_regridded[tt, :, :] = interpolate.griddata(np.array([lat.ravel(), lon.ravel()]).T,
-                                                   sst_ann[tt, :, :].ravel(), (lat_re, lon_re),
-                                                   method='linear')
-mask_regridded = interpolate.griddata(np.array([lat.ravel(), lon.ravel()]).T,
-                                      sst_global[0, :, :].mask.ravel(), (lat_re, lon_re),
-                                      method='linear')
-sst_regridded = np.ma.array(sst_regridded, mask=np.repeat(mask_regridded[np.newaxis, :, :],
-                                                           nt_in, axis=0))
+# nt_in, _, _ = sst_ann.shape
+# nj = 180
+# ni = 360
+# lon_re = np.repeat((np.arange(-180, 180) + 0.5)[np.newaxis, :], nj, axis=0)
+# lat_re = np.repeat((np.arange(-90, 90) + 0.5)[:, None], ni, axis=1)
+# sst_regridded = np.ma.masked_all(shape=(nt_in, nj, ni))
+#
+# for tt in range(nt_in):
+#     print('Regridding SST map {:d}'.format(tt))
+#     sst_regridded[tt, :, :] = interpolate.griddata(np.array([lat.ravel(), lon.ravel()]).T,
+#                                                    sst_ann[tt, :, :].ravel(), (lat_re, lon_re),
+#                                                    method='linear')
+# mask_regridded = interpolate.griddata(np.array([lat.ravel(), lon.ravel()]).T,
+#                                       sst_global[0, :, :].mask.ravel(), (lat_re, lon_re),
+#                                       method='linear')
+# sst_regridded = np.ma.array(sst_regridded, mask=np.repeat(mask_regridded[np.newaxis, :, :],
+#                                                            nt_in, axis=0))
 
 # def save_to_netcdf(filename, sst_ts, years):
 #     output = netCDF4.Dataset(filename, 'w', clobber=True, format='NETCDF4')
