@@ -25,6 +25,7 @@ import random
 from scipy import interpolate
 import sys
 import hashlib
+import xarray as xr
 
 # ==============
 # Constants we're reading in
@@ -89,7 +90,7 @@ else:
     forecast_datadir = '/work/scratch-nopw/{}/CMIP_{:s}/'.format(usr, forecast_var)
     analogue_datadir = '/work/scratch-nopw/{}/CMIP_{:s}/'.format(usr, analogue_var)
     processed_output_dir = '/work/scratch-nopw/{}/AnalogueCache'.format(usr)
-    scripts_dir = '/home/users/{}/python/scripts/'.format(usr)
+    scripts_dir = os.environ['ANALOGUE_SCRIPTS_DIR']  #'/home/users/{}/python/scripts/'.format(usr)
     hadisst_save_file = '/home/users/{}/data/HadISST_time_series_regions.pkl'.format(usr)
     en4_save_file = '/home/users/{}/data/EN4_0-500m_time_series_regions.pkl'.format(usr)
     hadcrut4_save_file = '/home/users/{}/data/HadCRUT4_time_series_regions.pkl'.format(usr)
@@ -144,8 +145,8 @@ else:
 # ==================
 # Just to get the associated projects for later
 # ==================
-cmip5_list_file = os.path.join(scripts_dir, 'cmip5_list.txt')
-cmip6_list_file = os.path.join(scripts_dir, 'cmip6_list.txt')
+cmip5_list_file = os.path.join(scripts_dir, 'model_lists/cmip5_list.txt')
+cmip6_list_file = os.path.join(scripts_dir, 'model_lists/cmip6_list.txt')
 
 cmip5_models = []
 with open(cmip5_list_file, 'r') as f:
@@ -169,7 +170,7 @@ elif skip_local_hist:
     skill_base += '_SkipLocalHist{:d}'.format(nearby_hist)
 elif strong_forcing_only:
     skill_base += '_StrongForcing{:d}'.format(earliest_hist)
-skill_base += '.pkl'
+skill_base += '.nc'
 skill_file = os.path.join(skill_output_dir, skill_base)
 print("Will write to:\n   {:s}\n".format(skill_file))
 
@@ -186,7 +187,7 @@ if pass_number > 1:
 # ==================
 # Get all the processed files that match
 # ==================
-processed_base = '{:s}_{:s}_*_*-*_Window{:d}{:s}_SpatialProcessed{:s}{:s}.pkl'
+processed_base = '{:s}_{:s}_*_*-*_Window{:d}{:s}_SpatialProcessed{:s}{:s}.nc'
 processed_base = processed_base.format(analogue_var, target_domain_string, window, smoothing_string, testing_string, rmse_string)
 
 id = hashlib.md5(processed_base.encode()).hexdigest()
@@ -401,10 +402,10 @@ def read_forecast_data(corr_info, nlead):
                 continue
 
             if experiment == 'piControl':
-                base_file = '{:s}_{:s}_{:s}_{:s}_Annual.pkl'.format(project, forecast_var, model, experiment)
+                base_file_timeser = '{:s}_{:s}timeser_{:s}_{:s}_Annual.nc'.format(project, analogue_var, model, experiment)
             else:
-                base_file = '{:s}_{:s}_{:s}_{:s}-{:s}_Annual.pkl'.format(project, forecast_var, model, experiment, ens_mem)
-            this_file = os.path.join(forecast_datadir, base_file)
+                base_file_timeser = '{:s}_{:s}timeser_{:s}_{:s}-{:s}_Annual.nc'.format(project, analogue_var, model, experiment, ens_mem)
+            this_file = os.path.join(forecast_datadir, base_file_timeser)
 
             if not os.path.isfile(this_file):
                 print(tt, imem, corr_info[tt, imem, :])
@@ -412,12 +413,27 @@ def read_forecast_data(corr_info, nlead):
 
             print(this_file)
             print(target_region)
-            with open(this_file, 'rb') as handle:
-                _, sst_ts_in, _, _, _, year_in = pickle.load(handle, encoding='latin')
+
+            if os.path.isfile(this_file):
+                ds_timeser = xr.open_dataset(this_file_time).to_array()
+                print('Time series loaded')
+                print(ds_timeser)
+                sst_ts_in = np.ma.masked_array(ds_timeser.values)
+                year_model_in = ds_timeser['time'].values
+
+    #with open(this_file, 'rb') as handle:
+        #sst_in, sst_ts_in, area_in, lon_in, lat_in, year_model_in = pickle.load(handle, encoding='latin')
+        #nyrs = len(year_model_in)
+        #_, nj_hist, ni_hist = sst_in.shape
+            else:
+                raise ValueError("{:s} does not exist".format(this_file_timeser))
+
+            #with open(this_file, 'rb') as handle:
+                #_, sst_ts_in, _, _, _, year_in = pickle.load(handle, encoding='latin')
                 #sst_ts_in, year_in, _
                 #_, sst_ts_in, _, _, _, year_in
-                print(sst_ts_in)
-                sst_ts_in  =  sst_ts_in[target_region]
+                #print(sst_ts_in)
+                #sst_ts_in  =  sst_ts_in[target_region]
 
             if len(year_in) == 0:
                 print("File exists but seems to be empty...")
@@ -613,14 +629,20 @@ for ifile, pf in enumerate(processed_files):
         if experiment == 'piControl':
             continue
 
-    with open(pf, 'rb') as handle:
-        corr_annual, corr_trend, _, year_model = pickle.load(handle, encoding='latin')
-        min_ann_corr, ann_corr_info = keep_best_corrs(corr_annual, min_ann_corr, ann_corr_info, model,
+    #with open(pf, 'rb') as handle:
+    ds = xr.open_dataset(pf).to_array()
+    ds_data = np.ma.masked_array(ds.values)
+    print(ds_data[0])
+    corr_annual = ds_data[0]
+    corr_trend = ds_data[1]
+    year_model = ds['time'].values
+    #corr_annual, corr_trend, _, year_model = pickle.load(handle, encoding='latin')
+    min_ann_corr, ann_corr_info = keep_best_corrs(corr_annual, min_ann_corr, ann_corr_info, model,
+                                                  experiment, ens_mem, num_mems_to_take=num_mems_to_take,
+                                                  nlead_min=nlead, pass_number=pass_number)
+    min_trend_corr, trend_corr_info = keep_best_corrs(corr_trend, min_trend_corr, trend_corr_info, model,
                                                       experiment, ens_mem, num_mems_to_take=num_mems_to_take,
                                                       nlead_min=nlead, pass_number=pass_number)
-        min_trend_corr, trend_corr_info = keep_best_corrs(corr_trend, min_trend_corr, trend_corr_info, model,
-                                                          experiment, ens_mem, num_mems_to_take=num_mems_to_take,
-                                                          nlead_min=nlead, pass_number=pass_number)
 
 
 t1 = time.time()
