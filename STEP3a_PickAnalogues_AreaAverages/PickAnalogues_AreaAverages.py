@@ -161,25 +161,42 @@ with open(cmip6_list_file, 'r') as f:
 # ==================
 # Note the final target save file
 # ==================
-skill_template = 'ANALOGUE{:s}_FORECAST{:s}_DOMAIN{:s}_TARGET{:s}_WINDOW{:d}_MEMS{:d}{:s}_SpatialSkill{:s}{:s}{:s}{:s}'
-skill_base = skill_template.format(analogue_var, forecast_var, target_domain_string, target_region, window, num_mems_to_take,
+skill_template_info = 'ANALOGUE{:s}_FORECAST{:s}_DOMAIN{:s}_TARGET{:s}_WINDOW{:d}_MEMS{:d}{:s}_SpatialSkill{:s}{:s}{:s}{:s}_info'
+skill_base_info = skill_template_info.format(analogue_var, forecast_var, target_domain_string, target_region, window, num_mems_to_take,
                                    smoothing_string, pass_string, testing_string, rmse_string, concat_string)
+skill_template_forecast = 'ANALOGUE{:s}_FORECAST{:s}_DOMAIN{:s}_TARGET{:s}_WINDOW{:d}_MEMS{:d}{:s}_SpatialSkill{:s}{:s}{:s}{:s}_forecast'
+skill_base_forecast = skill_template_forecast.format(analogue_var, forecast_var, target_domain_string, target_region, window, num_mems_to_take,
+                                   smoothing_string, pass_string, testing_string, rmse_string, concat_string)
+skill_template_means = 'ANALOGUE{:s}_FORECAST{:s}_DOMAIN{:s}_TARGET{:s}_WINDOW{:d}_MEMS{:d}{:s}_SpatialSkill{:s}{:s}{:s}{:s}_means'
+skill_base_means = skill_template_means.format(analogue_var, forecast_var, target_domain_string, target_region, window, num_mems_to_take,
+                                   smoothing_string, pass_string, testing_string, rmse_string, concat_string)
+
 if picontrols_only:
-    skill_base += '_piControlsOnly'
+    skill_base_info += '_piControlsOnly'
+    skill_base_forecast += '_piControlsOnly'
+    skill_base_means += '_piControlsOnly'
 elif skip_local_hist:
-    skill_base += '_SkipLocalHist{:d}'.format(nearby_hist)
+    skill_base_info += '_SkipLocalHist{:d}'.format(nearby_hist)
+    skill_base_forecast += '_SkipLocalHist{:d}'.format(nearby_hist)
+    skill_base_means += '_SkipLocalHist{:d}'.format(nearby_hist)
 elif strong_forcing_only:
-    skill_base += '_StrongForcing{:d}'.format(earliest_hist)
-skill_base += '.nc'
-skill_file = os.path.join(skill_output_dir, skill_base)
-print("Will write to:\n   {:s}\n".format(skill_file))
+    skill_base_info += '_StrongForcing{:d}'.format(earliest_hist)
+    skill_base_forecast += '_StrongForcing{:d}'.format(earliest_hist)
+    skill_base_means += '_StrongForcing{:d}'.format(earliest_hist)
+skill_base_info += '.nc'
+skill_base_forecast += '.nc'
+skill_base_means += '.nc'
+skill_file_info = os.path.join(skill_output_dir, skill_base_info)
+skill_file_forecast = os.path.join(skill_output_dir, skill_base_forecast)
+skill_file_means = os.path.join(skill_output_dir, skill_base_means)
+print("Will write to:\n   {:s} and {:s} and {:s}\n".format(skill_file_info,skill_file_forecast,skill_file_means))
 
 if pass_number > 1:
     if pass_number > 2:
         previous_pass_string = '_PASS{:d}'.format(pass_number - 1)
     else:
         previous_pass_string = ''
-    previous_skill_base = skill_template.format(analogue_var, forecast_var, target_domain_string, target_region, window, num_mems_to_take,
+    previous_skill_base = skill_template_info.format(analogue_var, forecast_var, target_domain_string, target_region, window, num_mems_to_take,
                                                 smoothing_string, previous_pass_string, testing_string, rmse_string, concat_string)
     previous_skill_file = os.path.join(skill_output_dir, previous_skill_base)
     print("Will read from previous skill data:\n   {:s}\n".format(previous_skill_file))
@@ -692,11 +709,37 @@ print("Time taken do read_forecast_data (annual) = {:.2f} minutes".format((t3 - 
 #                   trend_forecast_skill1960, trend_forecast_multiskill, trend_forecast_multiskill1960]
 #     pickle.dump(skill_data, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
-with open(skill_file, 'wb') as handle:
-    print("Writing save file: {:s}".format(skill_file))
-    skill_data = [ann_corr_info, ann_forecast, ann_forecast_means, ann_forecast_sds,
-                  trend_corr_info, trend_forecast, trend_forecast_means, trend_forecast_sds]
-    pickle.dump(skill_data, handle, protocol=pickle.HIGHEST_PROTOCOL)
+# Write output to xarray for export to .nc
+# This has to happen in 3 files, because there are 3 different dimensionalities in the output data: 150x100x5, 150x100x11, 150x100x16
+# (the dimensions are, as far as I can tell: time (150), member (100), infos (5), ntimes (11), time window (16))
+info_array = ['these_corrs','model','experiment','ens_mem','index']
+mem_array = range(1,101,1)
+window_array = range(1,17,1)
+ntimes_array = range(1,12,1)
+
+print(year_model.shape, year_analogue_obs.shape, year_forecast_obs.shape, ann_corr_info.shape, ann_forecast.shape, ann_forecast_means.shape, ann_forecast_sds.shape, trend_corr_info.shape, trend_forecast.shape, trend_forecast_means.shape, trend_forecast_sds.shape)
+
+info_xr = xr.DataArray(ann_corr_info, name='ann_corr_info', dims = ['time','member','info'], coords = {'time': (['time'],year_analogue_obs), 'member': (['member'],mem_array), 'info': (['info'],info_array)}).to_dataset(name='ann_corr_info')
+info_xr['trend_corr_info'] = xr.DataArray(trend_corr_info, name='trend_corr_info', dims = ['time','member','info'], coords = {'time': (['time'],year_analogue_obs), 'member': (['member'],mem_array), 'info': (['info'],info_array)})
+
+forecast_xr = xr.DataArray(ann_forecast, name='ann_forecast', dims = ['time','member','ntimes'], coords = {'time': (['time'],year_analogue_obs), 'member': (['member'],mem_array), 'ntimes': (['ntimes'],ntimes_array)}).to_dataset(name='ann_forecast')
+forecast_xr['trend_forecast'] = xr.DataArray(trend_forecast, name='trend_forecast', dims = ['time','member','ntimes'], coords = {'time': (['time'],year_analogue_obs), 'member': (['member'],mem_array), 'ntimes': (['ntimes'],ntimes_array)})
+
+means_xr = xr.DataArray(ann_forecast_means, name='ann_forecast_means', dims = ['time','member','window'], coords = {'time': (['time'],year_analogue_obs), 'member': (['member'],mem_array), 'window': (['window'],window_array)}).to_dataset(name='ann_forecast_means')
+means_xr['ann_forecast_sds'] = xr.DataArray(ann_forecast_sds, name='ann_forecast_sds', dims = ['time','member','window'], coords = {'time': (['time'],year_analogue_obs), 'member': (['member'],mem_array), 'window': (['window'],window_array)})
+means_xr['trend_forecast_means'] = xr.DataArray(trend_forecast_means, name='trend_forecast_means', dims = ['time','member','window'], coords = {'time': (['time'],year_analogue_obs), 'member': (['member'],mem_array), 'window': (['window'],window_array)})
+means_xr['trend_forecast_sds'] = xr.DataArray(trend_forecast_sds, name='trend_forecast_sds', dims = ['time','member','window'], coords = {'time': (['time'],year_analogue_obs), 'member': (['member'],mem_array), 'window': (['window'],window_array)})
+
+#with open(skill_file, 'wb') as handle:
+#    print("Writing save file: {:s}".format(skill_file))
+#    skill_data = [ann_corr_info, ann_forecast, ann_forecast_means, ann_forecast_sds,
+#                  trend_corr_info, trend_forecast, trend_forecast_means, trend_forecast_sds]
+#    pickle.dump(skill_data, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+info_xr.to_netcdf(path=skill_file_info,format="NETCDF4")
+forecast_xr.to_netcdf(path=skill_file_forecast,format="NETCDF4")
+means_xr.to_netcdf(path=skill_file_means,format="NETCDF4")
+
 t4 = time.time()
 print("Time taken to write save-file = {:.2f}".format((t4 - t3) / 60.))
 
