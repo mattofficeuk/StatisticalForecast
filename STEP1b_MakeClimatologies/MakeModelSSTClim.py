@@ -10,7 +10,7 @@ import xarray as xr
 from scipy import interpolate
 
 analogue_var = 'SST'
-model = sys.argv[3]
+model = sys.argv[1]
 
 # The problem with using a very early clim period is that the obs are actually just THEIR clim,
 # which is 1960-1990 anyway
