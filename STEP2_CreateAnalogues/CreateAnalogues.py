@@ -18,11 +18,9 @@ import pickle
 import os
 from scipy import stats
 import time
-import mfilter
 import random
 from scipy import interpolate
 import sys
-import selection
 import xarray as xr
 
 myhost = os.uname()[1]
@@ -45,7 +43,7 @@ else:
     datadir = '/work/scratch-nopw/{}/CMIP_{:s}/'.format(usr, analogue_var)
     #processed_output_dir = '/gws/nopw/j04/acsis/mmenary/python_saves/AnalogueCache/'
     processed_output_dir = '/work/scratch-nopw/{}/AnalogueCache'.format(usr)
-    # scripts_dir = '/home/users/{}/python/scripts/'.format(usr)
+    scripts_dir = '/home/users/{}/python/scripts3/python_modules'.format(usr)
     hadisst_save_file = '/home/users/{}/data/HadISST_AnnualMapCMIPStyleRegridded.pkl'.format(usr)
     hadisst_save_file_residual = '/home/users/{}/data/HadISST_AnnualMapCMIPStyleRegridded_Residual.pkl'.format(usr)
     en4_save_file = '/home/users/{}/data/EN4_0-500m_AnnualMapCMIPStyleRegridded.pkl'.format(usr)
@@ -57,8 +55,9 @@ def read_target_domain(in_string):
         out_list.append(np.int(in_string[ii*3:(ii+1)*3]))
     return out_list
 
-# sys.path.append(os.path.join(scripts_dir, 'selection.py'))
-# import selection
+sys.path.insert(0, scripts_dir)
+import selection
+import mfilter
 
 # ==============
 # Constants we're reading in
@@ -417,7 +416,9 @@ def make_anomaly(sst_masked, year_in, target=False, model=False):
     if target:
         sst_masked = sst_masked - target_sst_regrided_clim[np.newaxis, :, :]
     elif model:
-        sst_masked = sst_masked - sst_clim[np.newaxis, :, :]
+        print(sst_masked.shape)
+        print(sst_clim[np.newaxis, :, :].shape)
+        sst_masked = sst_masked - sst_clim	#[np.newaxis, :, :]
     return sst_masked
 
 def smooth(in_arr):
@@ -504,10 +505,13 @@ def check_and_pad(sst_in, year_in):
     return sst_model, year_model
 
 def find_climatology_for_model(model):
-    climatology_file = os.path.join(datadir, 'CMIP_{:s}_{:s}_historical-EnsMn_TM{:d}-{:d}_Annual.pkl'.format(analogue_var, model, clim_start, clim_end))
+    climatology_file = os.path.join(datadir, 'CMIP_{:s}_{:s}_historical-EnsMn_TM{:d}-{:d}_Annual.nc'.format(analogue_var, model, clim_start, clim_end))
     if os.path.isfile(climatology_file):
-        with open(climatology_file, 'rb') as handle:
-            sst_clim = pickle.load(handle,encoding='latin')
+        #with open(climatology_file, 'rb') as handle:
+        #    sst_clim = pickle.load(handle,encoding='latin')
+        ds_clim = xr.open_dataset(climatology_file).to_array()
+        sst_clim = np.ma.masked_array(ds_clim.values)
+        print('SST_clim is: {}'.format(sst_clim.shape))
     else:
         print("No climatology file exists, filling with missing data: {:s}".format(climatology_file))
         sst_clim = np.ma.masked_all(shape=(nj, ni))
@@ -563,6 +567,8 @@ else:
 
 print("Making anomaly w.r.t. {:d}-{:d} mean for MODEL".format(clim_start, clim_end))
 sst_clim = find_climatology_for_model(model)
+print('SST_masked_mean is now:{}'.format(sst_masked_mean.shape))
+print('SST_clim is now:{}'.format(sst_clim.shape))
 sst_masked_mean_anom = make_anomaly(sst_masked_mean, year_model, model=True)
 
 # Smooth first if necessary. Don't need to do this for each window as we will
@@ -628,6 +634,7 @@ if save_trends:
 #        pickle.dump(target_saved, handle,  protocol=pickle.HIGHEST_PROTOCOL)
 print("Attempting to create time-saver target file:  {:s}".format(target_saved_file))
 target_xr.to_netcdf(path=target_saved_file,format="NETCDF4")
+print(corr_ann)
 
 print(corr_ann.shape, corr_trend.shape, year_ann.shape, year_model.shape)
 
