@@ -602,6 +602,7 @@ corr_trend = selection.csc(method, target_masked_trend, year_ann, sst_masked_tre
 
 # TEMPORAL FIX: Writing np arrays to xarray for exporting as .nc files.
 print("Forming xarray files for printing")
+print(corr_ann)
 corr_print = xr.DataArray(corr_ann, name="corr_ann", dims = ['time_pred','time'], coords = {'time_pred': (['time_pred'],year_ann),'time': (['time'],year_model)}).to_dataset(name='corr_ann')
 corr_print['corr_trend'] = xr.DataArray(corr_trend, name="corr_trend", dims = ['time_pred','time'], coords = {'time_pred': (['time_pred'],year_ann),'time': (['time'],year_model)})
 
@@ -632,9 +633,9 @@ if save_trends:
 #    print("Attempting to create time-saver target file:  {:s}".format(target_saved_file))
 #    with open(target_saved_file, 'wb') as handle:
 #        pickle.dump(target_saved, handle,  protocol=pickle.HIGHEST_PROTOCOL)
-print("Attempting to create time-saver target file:  {:s}".format(target_saved_file))
-target_xr.to_netcdf(path=target_saved_file,format="NETCDF4")
-print(corr_ann)
+if not os.path.isfile(target_saved_file):
+    print("Attempting to create time-saver target file:  {:s}".format(target_saved_file))
+    target_xr.to_netcdf(path=target_saved_file,format="NETCDF4")
 
 print(corr_ann.shape, corr_trend.shape, year_ann.shape, year_model.shape)
 

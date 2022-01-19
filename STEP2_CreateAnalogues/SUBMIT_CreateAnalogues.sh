@@ -213,7 +213,7 @@ do
 
     						${scripts_dir}/queue_spacer_sbatch.sh $max_jobs  # This will check every 120s if I have less than 100 jobs in the Q
 
-    						cmd="sbatch -p $queue -t 6:00:00 -n 1 -o ${output} -e ${error} ${runscript} ${model} ${experiment} ${ens_mem} ${window} ${target_domain} ${smoothing} ${testing} ${clim_string} ${concatenate_string} ${scripts_dir}"
+    						cmd="sbatch -p $queue -t 24:00:00 -n 1 -o ${output} -e ${error} ${runscript} ${model} ${experiment} ${ens_mem} ${window} ${target_domain} ${smoothing} ${testing} ${clim_string} ${concatenate_string} ${scripts_dir}"
     						echo $cmd
     						$cmd
     						#exit

@@ -198,6 +198,7 @@ if pass_number > 1:
         previous_pass_string = ''
     previous_skill_base = skill_template_info.format(analogue_var, forecast_var, target_domain_string, target_region, window, num_mems_to_take,
                                                 smoothing_string, previous_pass_string, testing_string, rmse_string, concat_string)
+    previous_skill_base += '.nc'
     previous_skill_file = os.path.join(skill_output_dir, previous_skill_base)
     print("Will read from previous skill data:\n   {:s}\n".format(previous_skill_file))
 
@@ -324,18 +325,21 @@ def keep_best_corrs(input_corr, min_corr, corr_info, model, experiment, ens_mem,
 
         # Mask out corrs that are lower than the best we've already found
         these_corrs = np.ma.masked_less(input_corr[tt_analogue, :], min_corr[tt])
+        #print(these_corrs)
 
         # Mask out corrs near the end of the time series (as these won't be useful in building the analogue)
         if len(these_corrs) < nlead_min:
             these_corrs[:].mask = True
         else:
             these_corrs[-nlead_min:].mask = True
-
+        
         # Otherwise start the storing operations
         if these_corrs.count() > 0:
             # Flip so as to start with the best/unmasked. fill_value is important
             # as it means the masked values go at the start  (which becomes the end)
-            these_corrs_sorted = np.flip(these_corrs.argsort(fill_value=-1), 0)
+            np.nan_to_num(these_corrs,copy=False,nan=-1.0)
+            these_corrs_sorted = np.flip(these_corrs.argsort(), 0)
+            #print(these_corrs[these_corrs_sorted])
             for count, index in enumerate(these_corrs_sorted):
                 if check_duplicate(model, experiment, ens_mem, index, this_corr_info):  # Not sure if this will work on pass=1
                     continue
@@ -347,6 +351,9 @@ def keep_best_corrs(input_corr, min_corr, corr_info, model, experiment, ens_mem,
                         continue
                 # "IF" below because we might be looking at a masked element
                 # We overwrite the bottom value as the array is sorted by size (increasing)
+                #print(count)
+                #print(index)
+                #print(these_corrs[index])
                 if these_corrs[index] > min_corr[tt]:
                     this_corr_info[0, 0] = these_corrs[index]
                     this_corr_info[0, 1] = model
@@ -355,15 +362,20 @@ def keep_best_corrs(input_corr, min_corr, corr_info, model, experiment, ens_mem,
                     this_corr_info[0, 4] = index  # This is lead=0
                 else:
                     break  # Exit if presumably masked as all remainder should be too
+
                 this_corr_info = sort_corrs(this_corr_info)
                 if np.isfinite(this_corr_info[0, 0]):
                     min_corr[tt] = this_corr_info[0, 0]
+                    #print(min_corr[tt])
+                #print(this_corr_info)
         # elif pass_number > 1:
         #     print "I may have removed corr's and not added any..."
         #     print tt, model, experiment, ens_mem
 
         # Put the corr info into the yearly array
+        #print(this_corr_info)
         corr_info[tt, :, :] = this_corr_info
+    #print(max(corr_info))
     return min_corr, corr_info
 
 # Function to pad the missing data inside the time series'
@@ -400,13 +412,15 @@ def read_forecast_data(corr_info, nlead):
     for tt, year in enumerate(year_forecast_obs):
         loop_t0 = time.time()
         print('{:d}/{:d}'.format(tt+1, nyrs_forecast))
-        #if tt != 33: continue ###########################################
+        #if tt <= 33: 
+            #continue ###########################################
+
         for imem in range(num_mems_to_take):
             model = corr_info[tt, imem, 1]
             experiment = corr_info[tt, imem, 2]
             ens_mem = corr_info[tt, imem, 3]
             index = corr_info[tt, imem, 4]  # At lead=0
-
+ 
             if not isinstance(model, str):
                 continue
 
@@ -422,21 +436,21 @@ def read_forecast_data(corr_info, nlead):
                 base_file_timeser = '{:s}_{:s}timeser_{:s}_{:s}_Annual.nc'.format(project, analogue_var, model, experiment)
             else:
                 base_file_timeser = '{:s}_{:s}timeser_{:s}_{:s}-{:s}_Annual.nc'.format(project, analogue_var, model, experiment, ens_mem)
-            this_file = os.path.join(forecast_datadir, base_file_timeser)
+            this_file_timeser = os.path.join(forecast_datadir, base_file_timeser)
 
-            if not os.path.isfile(this_file):
+            if not os.path.isfile(this_file_timeser):
                 print(tt, imem, corr_info[tt, imem, :])
-                raise ValueError("This file should exist: {:s}".format(this_file))
+                raise ValueError("This file should exist: {:s}".format(this_file_timeser))
 
-            print(this_file)
-            print(target_region)
-
-            if os.path.isfile(this_file):
-                ds_timeser = xr.open_dataset(this_file_time).to_array()
+            if os.path.isfile(this_file_timeser):
+                ds_timeser = xr.open_dataset(this_file_timeser)
+                ds_timeser = ds_timeser[target_region]
                 print('Time series loaded')
-                print(ds_timeser)
+                #print(ds_timeser)
                 sst_ts_in = np.ma.masked_array(ds_timeser.values)
+                #sst_ts_in  =  sst_ts_in[target_region]
                 year_model_in = ds_timeser['time'].values
+                year_in = year_model_in
 
     #with open(this_file, 'rb') as handle:
         #sst_in, sst_ts_in, area_in, lon_in, lat_in, year_model_in = pickle.load(handle, encoding='latin')
@@ -444,6 +458,7 @@ def read_forecast_data(corr_info, nlead):
         #_, nj_hist, ni_hist = sst_in.shape
             else:
                 raise ValueError("{:s} does not exist".format(this_file_timeser))
+                continue
 
             #with open(this_file, 'rb') as handle:
                 #_, sst_ts_in, _, _, _, year_in = pickle.load(handle, encoding='latin')
@@ -454,7 +469,7 @@ def read_forecast_data(corr_info, nlead):
 
             if len(year_in) == 0:
                 print("File exists but seems to be empty...")
-                print(this_file)
+                print(this_file_timeser)
                 continue
 
             # These need to be padded just like they were in AnalogueCache_Spatial.py
@@ -601,6 +616,7 @@ def check_allowed_file(filename, analogue_var, forecast_var):
 print('Finding best analogues')
 
 t0 = time.time()
+countom = 0
 
 if pass_number == 1:
     # Must initialse as a float not integer!!
@@ -613,15 +629,19 @@ if pass_number == 1:
     trend_corr_info = np.ma.masked_all(shape=(nyrs_forecast, num_mems_to_take, 5), dtype=object)
 else:
     raise ValueError('Deprecated')
-    with open(previous_skill_file, 'rb') as handle:
-        print("Reading previous skill file: {:s}".format(previous_skill_file))
-        data = pickle.load(handle, encoding='latin')
-        if len(data) == 14:
-            ann_corr_info, _, _, _, _, _, _, trend_corr_info, _, _, _, _, _, _ = data
-        elif len(data) == 18:
-            ann_corr_info, _, _, _, _, _, _, _, _, trend_corr_info, _, _, _, _, _, _, _, _ = data
-        min_ann_corr = np.ma.min(ann_corr_info[:, :, 0], axis=1)
-        min_trend_corr = np.ma.min(trend_corr_info[:, :, 0], axis=1)
+    #with open(previous_skill_file, 'rb') as handle:
+        #print("Reading previous skill file: {:s}".format(previous_skill_file))
+        #data = pickle.load(handle, encoding='latin')
+        #if len(data) == 14:
+        #    ann_corr_info, _, _, _, _, _, _, trend_corr_info, _, _, _, _, _, _ = data
+        #elif len(data) == 18:
+        #    ann_corr_info, _, _, _, _, _, _, _, _, trend_corr_info, _, _, _, _, _, _, _, _ = data
+    ds = xr.open_dataset(previous_skill_file).to_array()
+    ds_data = np.ma.masked_array(ds.values)
+    ann_corr_info = ds_data[0]
+    trend_corr_info = ds_data[1]
+    min_ann_corr = np.ma.min(ann_corr_info[:, :, 0], axis=1)
+    min_trend_corr = np.ma.min(trend_corr_info[:, :, 0], axis=1)
 
 for ifile, pf in enumerate(processed_files):
     print('{:d}/{:d} {:s}'.format(ifile+1, nfiles, pf))
@@ -649,7 +669,12 @@ for ifile, pf in enumerate(processed_files):
     #with open(pf, 'rb') as handle:
     ds = xr.open_dataset(pf).to_array()
     ds_data = np.ma.masked_array(ds.values)
-    print(ds_data[0])
+    if np.isnan(ds_data[0]).all():
+        print(" ++ Skipping this file")
+        countom += 1
+        continue
+
+    #print(ds_data[0])
     corr_annual = ds_data[0]
     corr_trend = ds_data[1]
     year_model = ds['time'].values
@@ -660,7 +685,13 @@ for ifile, pf in enumerate(processed_files):
     min_trend_corr, trend_corr_info = keep_best_corrs(corr_trend, min_trend_corr, trend_corr_info, model,
                                                       experiment, ens_mem, num_mems_to_take=num_mems_to_take,
                                                       nlead_min=nlead, pass_number=pass_number)
+    #print(ann_corr_info)
+    
+print('Number of models omitted due to nan: {}'.format(countom))
+tmod = nfiles-countom
+print('Total number of models used: {}'.format(tmod))
 
+print(min_ann_corr)
 
 t1 = time.time()
 print("Time taken do keep_best_corrs = {:.2f} minutes".format((t1 - t0) /60.))
@@ -711,7 +742,7 @@ print("Time taken do read_forecast_data (annual) = {:.2f} minutes".format((t3 - 
 
 # Write output to xarray for export to .nc
 # This has to happen in 3 files, because there are 3 different dimensionalities in the output data: 150x100x5, 150x100x11, 150x100x16
-# (the dimensions are, as far as I can tell: time (150), member (100), infos (5), ntimes (11), time window (16))
+# (the dimensions are, as far as I can tell: time (150), member (100), infos (5), lead time or region? (11), time window (16))
 info_array = ['these_corrs','model','experiment','ens_mem','index']
 mem_array = range(1,101,1)
 window_array = range(1,17,1)
@@ -719,8 +750,13 @@ ntimes_array = range(1,12,1)
 
 print(year_model.shape, year_analogue_obs.shape, year_forecast_obs.shape, ann_corr_info.shape, ann_forecast.shape, ann_forecast_means.shape, ann_forecast_sds.shape, trend_corr_info.shape, trend_forecast.shape, trend_forecast_means.shape, trend_forecast_sds.shape)
 
-info_xr = xr.DataArray(ann_corr_info, name='ann_corr_info', dims = ['time','member','info'], coords = {'time': (['time'],year_analogue_obs), 'member': (['member'],mem_array), 'info': (['info'],info_array)}).to_dataset(name='ann_corr_info')
-info_xr['trend_corr_info'] = xr.DataArray(trend_corr_info, name='trend_corr_info', dims = ['time','member','info'], coords = {'time': (['time'],year_analogue_obs), 'member': (['member'],mem_array), 'info': (['info'],info_array)})
+ann_corr_info_write = ann_corr_info[:,:,0]
+trend_corr_info_write = trend_corr_info[:,:,0]
+
+info_xr = xr.DataArray(ann_corr_info_write, name='ann_corr_info', dims = ['time','member'], coords = {'time': (['time'],year_analogue_obs), 'member': (['member'],mem_array)}).to_dataset(name='ann_corr_info')
+info_xr['trend_corr_info'] = xr.DataArray(trend_corr_info_write, name='trend_corr_info', dims = ['time','member'], coords = {'time': (['time'],year_analogue_obs), 'member': (['member'],mem_array)})
+#info_xr = xr.DataArray(ann_corr_info, name='ann_corr_info', dims = ['time','member','info'], coords = {'time': (['time'],year_analogue_obs), 'member': (['member'],mem_array), 'info': (['info'],info_array)}).to_dataset(name='ann_corr_info')
+#info_xr['trend_corr_info'] = xr.DataArray(trend_corr_info, name='trend_corr_info', dims = ['time','member','info'], coords = {'time': (['time'],year_analogue_obs), 'member': (['member'],mem_array), 'info': (['info'],info_array)})
 
 forecast_xr = xr.DataArray(ann_forecast, name='ann_forecast', dims = ['time','member','ntimes'], coords = {'time': (['time'],year_analogue_obs), 'member': (['member'],mem_array), 'ntimes': (['ntimes'],ntimes_array)}).to_dataset(name='ann_forecast')
 forecast_xr['trend_forecast'] = xr.DataArray(trend_forecast, name='trend_forecast', dims = ['time','member','ntimes'], coords = {'time': (['time'],year_analogue_obs), 'member': (['member'],mem_array), 'ntimes': (['ntimes'],ntimes_array)})
@@ -736,6 +772,7 @@ means_xr['trend_forecast_sds'] = xr.DataArray(trend_forecast_sds, name='trend_fo
 #                  trend_corr_info, trend_forecast, trend_forecast_means, trend_forecast_sds]
 #    pickle.dump(skill_data, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
+print(info_xr)
 info_xr.to_netcdf(path=skill_file_info,format="NETCDF4")
 forecast_xr.to_netcdf(path=skill_file_forecast,format="NETCDF4")
 means_xr.to_netcdf(path=skill_file_means,format="NETCDF4")
