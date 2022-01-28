@@ -760,6 +760,7 @@ info_xr['trend_corr_info'] = xr.DataArray(trend_corr_info_write, name='trend_cor
 
 forecast_xr = xr.DataArray(ann_forecast, name='ann_forecast', dims = ['time','member','ntimes'], coords = {'time': (['time'],year_analogue_obs), 'member': (['member'],mem_array), 'ntimes': (['ntimes'],ntimes_array)}).to_dataset(name='ann_forecast')
 forecast_xr['trend_forecast'] = xr.DataArray(trend_forecast, name='trend_forecast', dims = ['time','member','ntimes'], coords = {'time': (['time'],year_analogue_obs), 'member': (['member'],mem_array), 'ntimes': (['ntimes'],ntimes_array)})
+print(ann_forecast[:,14,2])
 
 means_xr = xr.DataArray(ann_forecast_means, name='ann_forecast_means', dims = ['time','member','window'], coords = {'time': (['time'],year_analogue_obs), 'member': (['member'],mem_array), 'window': (['window'],window_array)}).to_dataset(name='ann_forecast_means')
 means_xr['ann_forecast_sds'] = xr.DataArray(ann_forecast_sds, name='ann_forecast_sds', dims = ['time','member','window'], coords = {'time': (['time'],year_analogue_obs), 'member': (['member'],mem_array), 'window': (['window'],window_array)})

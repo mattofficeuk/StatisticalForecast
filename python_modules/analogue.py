@@ -43,8 +43,10 @@ def remove_masked(list_in):
     return list_in
 
 def make_info_matrices(corr_info, target_years, num_mems_to_take):
-    models = remove_masked(list(np.unique(corr_info[:, :, 1])))
-    expts_used_unsorted = remove_masked(list(np.unique(corr_info[:, :, 2])))
+    #models = remove_masked(list(np.unique(corr_info[:, :, 1])))
+    #expts_used_unsorted = remove_masked(list(np.unique(corr_info[:, :, 2])))
+    models = remove_masked(list(np.unique(corr_info[:, :])))
+    expts_used_unsorted = remove_masked(list(np.unique(corr_info[:, :])))
     decadal_list = ['decadal' + str(num) for num in range(1960, 2021)]
     expts = ['piControl', 'historical', 'hist-GHG', 'hist-aer', 'hist-nat', 'hist-stratO3',
              'rcp45', 'ssp126',  'rcp85', 'ssp585'] + decadal_list
@@ -58,10 +60,18 @@ def make_info_matrices(corr_info, target_years, num_mems_to_take):
     expt_matrix = np.ma.masked_all(shape=(len(target_years), num_mems_to_take), dtype='int')
     for iyr, year in enumerate(target_years):
         for jj in range(num_mems_to_take):
-            if np.isfinite(corr_info[iyr, jj, 0]) == True:
-                model = corr_info[iyr, jj, 1]
+#            if np.isfinite(corr_info[iyr, jj, 0]) == True:
+#                model = corr_info[iyr, jj, 1]
+#                if model == '': continue
+#                expt = corr_info[iyr, jj, 2]
+#                imodel = models.index(model)
+#                iexpt = expts.index(expt)
+#                model_matrix[iyr, jj] = imodel
+#                expt_matrix[iyr, jj] = iexpt
+            if np.isfinite(corr_info[iyr, jj]) == True:
+                model = corr_info[iyr, jj]
                 if model == '': continue
-                expt = corr_info[iyr, jj, 2]
+                expt = corr_info[iyr, jj]
                 imodel = models.index(model)
                 iexpt = expts.index(expt)
                 model_matrix[iyr, jj] = imodel
@@ -83,7 +93,7 @@ def recentre_forecast(forecast_3d_in, num_mems_to_take, analogue_means, analogue
     if not chosen_norm_window:
         chosen_norm_window = window
     nyrs = len(target_time_series)
-    max_mems_to_take = 20
+    max_mems_to_take = 100
     if old_recentre_method:
         print("OLD")
         # Subtract t=0 from analogue to make an anomaly
@@ -188,6 +198,7 @@ def recentre_forecast(forecast_3d_in, num_mems_to_take, analogue_means, analogue
         # during the analogue creation window, AND THEN scales the resulting ensemble mean forecast by
         # the s.d. of the ensemble mean in the prior obs period
         # Remove analogue period  mean
+        print("Clever scaling")
         forecast_anom = forecast_3d_in - np.repeat(analogue_means[:, :, None], nlead, axis=2)
 
         # Create sds and means for obs for each analogue period and make same shape as model array
@@ -206,7 +217,9 @@ def recentre_forecast(forecast_3d_in, num_mems_to_take, analogue_means, analogue
             forecast_anom_norm = forecast_anom
 
         # Now take the MMM of the FORECAST
-        forecast_anom_norm_mmm = np.ma.mean(forecast_anom_norm[:, max_mems_to_take-num_mems_to_take:, :], axis=1)
+        print(forecast_anom_norm[:, 14, 2])
+        forecast_anom_norm_mmm = np.nanmean(forecast_anom_norm[:, max_mems_to_take-num_mems_to_take:, :], axis=1)
+        print(forecast_anom_norm_mmm[:, 2])
 
         # Now scale AGAIN by the obs. Note I divide by the (future) forecast here when it would be better
         # to divide by the same models etc but in the analogue period (i.e. forecast backwards for the
