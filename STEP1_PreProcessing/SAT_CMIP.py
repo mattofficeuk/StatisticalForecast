@@ -7,6 +7,7 @@ import netCDF4
 import numpy as np
 import os
 import sys
+import xarray as xr
 
 usr = os.environ["USER"]
 
@@ -191,7 +192,9 @@ else:
 
 # save_file = '{:s}/{:s}_SAT_{:s}_{:s}{:s}_Monthly{:s}.pkl'.format(save_dir, project, model, experiment, ens_mem_string, time_series_only_string)
 # save_file_ann = '{:s}/{:s}_SAT_{:s}_{:s}{:s}_Annual{:s}.pkl'.format(save_dir, project, model, experiment, ens_mem_string, time_series_only_string)
-save_file_regridded = '{:s}/{:s}_SAT_{:s}_{:s}{:s}_Annual_Regridded{:s}.pkl'.format(save_dir, project, model, experiment, ens_mem_string, time_series_only_string)
+save_file_regridded = '{:s}/{:s}_SAT_{:s}_{:s}{:s}_Annual_Regridded{:s}.nc'.format(save_dir, project, model, experiment, ens_mem_string, time_series_only_string)
+save_file_mask = '{:s}/{:s}_SAT_{:s}_{:s}{:s}_Annual_mask{:s}.nc'.format(save_dir, project, model, experiment, ens_mem_string, time_series_only_string)
+save_file_timeseries = '{:s}/{:s}_SAT_{:s}_{:s}{:s}_Annual_timeseries{:s}.nc'.format(save_dir, project, model, experiment, ens_mem_string, time_series_only_string)
 if TESTING:
     # save_file += '.TEST'
     # save_file_ann += '.TEST'
@@ -519,11 +522,37 @@ if not time_series_only:
 # ==================
 # Save the data (annual version only?)
 # ==================
-if not time_series_only:
-    with open(save_file_regridded, 'wb') as handle:
-        print("Saving SAT data: {:s}".format(save_file_regridded))
-        print(sat_regridded.shape, year_ann.shape, seasonal_cycle.shape)
-        pickle.dump([sat_regridded, year_ann, seasonal_cycle], handle, protocol=pickle.HIGHEST_PROTOCOL)
-        print("DONE!")
+#if not time_series_only:
+#    with open(save_file_regridded, 'wb') as handle:
+#        print("Saving SAT data: {:s}".format(save_file_regridded))
+#        print(sat_regridded.shape, year_ann.shape, seasonal_cycle.shape)
+#        pickle.dump([sat_regridded, year_ann, seasonal_cycle], handle, protocol=pickle.HIGHEST_PROTOCOL)
+#        print("DONE!")
+
+for region in regions:
+    if region == 'europe1':
+        sat_timesers = xr.DataArray(sat_ts_ann[region], name=region, dims = ['time'], coords = {'time': (['time'],year_ann)}).to_dataset(name='europe1')
+    else:
+        sat_timesers[region] = xr.DataArray(sat_ts_ann[region], name=region, dims = ['time'], coords = {'time': (['time'],year_ann)})
+
+print(sat_regridded.shape)
+print(mask_regridded.shape)
+
+sat_field = xr.DataArray(sat_regridded, name='SAT', dims = ['time','y','x'], coords = {'time': (['time'],year_ann), 'lat': (['y','x'],lat), 'lon': (['y','x'],lon)}).to_dataset(name='SAT')
+sat_mask = xr.DataArray(mask_regridded, name="mask", dims = ['time','y','x'], coords = {'time': (['time'],year_ann), 'lat': (['y','x'],lat), 'lon': (['y','x'],lon)}).to_dataset(name='mask')
+
+print("Saving SAT data: {:s} and {:s}".format(save_file_regridded,save_file_timeser))
+#print(sst_timesers.shape,sst_ann.shape, area.shape, lon.shape, lat.shape, year_ann.shape)
+
+if time_series_only:
+    #ds = xr.Dataset({'SST': (('time'), sst_timesers)}, coords={'region':regions,'time':year_ann})
+    sat_timesers.to_netcdf(path=save_file_timeser,format="NETCDF4")
+else:
+    sat_timesers.to_netcdf(path=save_file_timeser,format="NETCDF4")
+    sat_field.to_netcdf(path=save_file_regridded,format="NETCDF4")
+    sat_mask.to_netcdf(path=save_file_mask,format="NETCDF4")
+
+print("DONE!")
+
 
 print("Program finished sucessfully")

@@ -52,7 +52,7 @@ else:
 def read_target_domain(in_string):
     out_list = []
     for ii in range(4):
-        out_list.append(np.int(in_string[ii*3:(ii+1)*3]))
+        out_list.append(np.int(in_string[ii*4:(ii+1)*4])) #ii*3:(ii+1)*3
     return out_list
 
 sys.path.insert(0, scripts_dir)
