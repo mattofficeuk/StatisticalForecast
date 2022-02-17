@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
-# sleep 1h
+
 echo "Beginning loops!"
 
-var=SST
+## ==================
+## Current options are SAT or SST
+## ==================
+var=SAT
+
 echo "Running for username: $USER"
 usr=$USER
 
@@ -35,12 +39,12 @@ while read model
 do
   echo $model
 
-  output=${output_dir}/Make${var}Clim_${model}.out
-  error=${output_dir}/Make${var}Clim_${model}.err
+  output=${output_dir}/MakeSSTClim_${model}.out  ## Could consider changing the filename to something
+  error=${output_dir}/MakeSSTClim_${model}.err   ## less misleading... :-/
 
   # ${scripts_dir}/queue_spacer_sbatch.sh $max_jobs  # This will check every 120s if I have less than 100 jobs in the Q
 
-  cmd="sbatch -p $queue -t 6:00:00 -n 1 -o ${output} -e ${error} ${runscript} ${model}"
+  cmd="sbatch -p $queue -t 6:00:00 -n 1 -o ${output} -e ${error} ${runscript} ${model} ${var}"
   echo $cmd
 
   $cmd
