@@ -12,6 +12,7 @@ from scipy import interpolate
 # analogue_var = 'fld2d'
 model = sys.argv[1]
 analogue_var = sys.argv[2]
+seas = sys.argv[3]
 
 # The problem with using a very early clim period is that the obs are actually just THEIR clim,
 # which is 1960-1990 anyway
@@ -27,7 +28,10 @@ usr = os.environ["USER"]
 
 datadir = '/work/scratch-nopw/{}/CMIP_{:s}/'.format(usr,analogue_var)
 
-climatology_file = os.path.join(datadir, 'CMIP_{:s}_{:s}_historical-EnsMn_TM{:d}-{:d}_Annual.nc'.format(analogue_var, model, clim_start, clim_end))
+if seas == "annual":
+    climatology_file = os.path.join(datadir, 'CMIP_{:s}_{:s}_historical-EnsMn_TM{:d}-{:d}_Annual.nc'.format(analogue_var, model, clim_start, clim_end))
+elif seas == "JJA":
+    climatology_file = os.path.join(datadir, 'CMIP_{:s}_{:s}_historical-EnsMn_TM{:d}-{:d}_JJA.nc'.format(analogue_var, model, clim_start, clim_end))
 
 tolerance = 0.9 * (clim_end - clim_start)
 
@@ -64,15 +68,21 @@ def get_area():
 if os.path.isfile(climatology_file):
     print('Already created climatology file:  {:s}'.format(climatology_file))
 else:
-    hist_files_field = glob.glob(os.path.join(datadir, 'CMIP?_{:s}field_{:s}_historical-*_Annual.nc'.format(analogue_var, model)))
-    hist_files_field.sort()
-    hist_files_mask = glob.glob(os.path.join(datadir, 'CMIP?_{:s}mask_{:s}_historical-1_Annual.nc'.format(analogue_var, model)))
+    if seas == "annual":
+        hist_files_field = glob.glob(os.path.join(datadir, 'CMIP?_{:s}field_{:s}_historical-*_Annual.nc'.format(analogue_var, model)))
+        hist_files_field.sort()
+        hist_files_mask = glob.glob(os.path.join(datadir, 'CMIP?_{:s}mask_{:s}_historical-1_Annual.nc'.format(analogue_var, model)))
+    elif seas == "JJA":
+        hist_files_field = glob.glob(os.path.join(datadir, 'CMIP?_{:s}field_{:s}_historical-*_JJA.nc'.format(analogue_var, model)))
+        hist_files_field.sort()
+        hist_files_mask = glob.glob(os.path.join(datadir, 'CMIP?_{:s}mask_{:s}_historical-1_JJA.nc'.format(analogue_var, model)))
 
     nj, ni = 180, 360
     lon_re = np.repeat((np.arange(-180, 180) + 0.5)[np.newaxis, :], nj, axis=0)
     lat_re = np.repeat((np.arange(-90, 90) + 0.5)[:, None], ni, axis=1)
     climatology = np.zeros(shape=(nj, ni))
     count = 0.
+    print(hist_files_field)
     for ifile, hist_file in enumerate(hist_files_field):
         print(ifile, hist_file)
 

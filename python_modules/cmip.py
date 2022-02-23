@@ -102,6 +102,9 @@ def get_coords(region):
     elif region == 'europe1':
         xx = [-10, 40]
         yy = [40, 70]
+    elif region == 'south_europe':
+        xx = [10, 30]
+        yy = [35, 50]
     else:
         raise ValueError("Unknown mask region")
 

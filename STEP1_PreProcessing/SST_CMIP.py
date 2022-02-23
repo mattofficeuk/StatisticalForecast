@@ -46,11 +46,17 @@ list_location = sys.argv[7]
 
 print('Inputs: ', sys.argv)
 
+seasonal = False
+annual = False
+JJA = False
+
 if period_string == 'Seasonal':
     seasonal = True
     save_dir += '_Seas'
 elif period_string == 'Annual':
-    seasonal = False
+    annual = True
+elif period_string == 'JJA':
+    JJA = True
 else:
     raise ValueError('period_string unknown')
 if not os.path.isdir(save_dir):
@@ -209,9 +215,14 @@ else:
     ens_mem_string = '-{:s}'.format(ens_mem)
 
 # save_file = '{:s}/{:s}_SST_{:s}_{:s}{:s}_Monthly{:s}.pkl'.format(save_dir, project, model, experiment, ens_mem_string, time_series_only_string)
-save_file_ann_field = '{:s}/{:s}_SSTfield_{:s}_{:s}{:s}_Annual{:s}.nc'.format(save_dir, project, model, experiment, ens_mem_string, time_series_only_string)
-save_file_ann_timeser = '{:s}/{:s}_SSTtimeser_{:s}_{:s}{:s}_Annual{:s}.nc'.format(save_dir, project, model, experiment, ens_mem_string, time_series_only_string)
-save_file_ann_mask = '{:s}/{:s}_SSTmask_{:s}_{:s}{:s}_Annual{:s}.nc'.format(save_dir, project, model, experiment, ens_mem_string, time_series_only_string)
+if annual:
+    save_file_ann_field = '{:s}/{:s}_SSTfield_{:s}_{:s}{:s}_Annual{:s}.nc'.format(save_dir, project, model, experiment, ens_mem_string, time_series_only_string)
+    save_file_ann_timeser = '{:s}/{:s}_SSTtimeser_{:s}_{:s}{:s}_Annual{:s}.nc'.format(save_dir, project, model, experiment, ens_mem_string, time_series_only_string)
+    save_file_ann_mask = '{:s}/{:s}_SSTmask_{:s}_{:s}{:s}_Annual{:s}.nc'.format(save_dir, project, model, experiment, ens_mem_string, time_series_only_string)
+elif JJA:
+    save_file_ann_field = '{:s}/{:s}_SSTfield_{:s}_{:s}{:s}_JJA{:s}.nc'.format(save_dir, project, model, experiment, ens_mem_string, time_series_only_string)
+    save_file_ann_timeser = '{:s}/{:s}_SSTtimeser_{:s}_{:s}{:s}_JJA{:s}.nc'.format(save_dir, project, model, experiment, ens_mem_string, time_series_only_string)
+    save_file_ann_mask = '{:s}/{:s}_SSTmask_{:s}_{:s}{:s}_JJA{:s}.nc'.format(save_dir, project, model, experiment, ens_mem_string, time_series_only_string)
 # save_file_regridded = '{:s}/{:s}_SST_{:s}_{:s}{:s}_{:s}_Regridded{:s}.pkl'.format(save_dir, project, model, experiment, ens_mem_string, period_string, time_series_only_string)
 # netcdf_save_file = '{:s}/{:s}_SST_{:s}_{:s}{:s}_Annual{:s}.nc'.format(save_dir_netcdf, project, model, experiment, ens_mem_string, time_series_only_string)
 if TESTING:
@@ -222,6 +233,7 @@ if TESTING:
 
 # print "Will save to:\n{:s}\n{:s}\n{:s}\n{:s}\n".format(save_file, save_file_ann, save_file_regridded, netcdf_save_file)
 print("Will save to: {:s} and {:s}".format(save_file_ann_field,save_file_ann_timeser))
+
 
 # ==================
 # Find the institute associated with the input model
@@ -321,10 +333,14 @@ print("Unique, full years are:", year_ann)
 if seasonal:
     ntimes_to_keep_while_working = 3
     nseasons = 4
-else:
-    ## Annual
+elif annual:
+    ## Annual or single season
     ntimes_to_keep_while_working = 12
     nseasons = 1
+elif JJA:
+    ntimes_to_keep_while_working = 3
+    nseasons = 1
+
 
 ntimes_output = len(year_ann) * nseasons
 
@@ -369,6 +385,9 @@ for ifile, thetao_file in enumerate(thetao_files):
     t0, t1 = os.path.basename(thetao_file).split('_')[-1].split('.nc')[0].split('-')
     y0, y1 = int(t0[:4]), int(t1[:4])
     m0, m1 = int(t0[4:]), int(t1[4:])
+
+    if JJA:
+        y0 += 5
 
     for tt in range(ntimes):
         tt2 += 1
@@ -471,13 +490,24 @@ for ifile, thetao_file in enumerate(thetao_files):
                     index_of_timemean = year_index + season_index
                     reached_meaning_window = True
                     break
-        else:
+        elif annual:
             # Check each year. If we have the correct months for an annual mean stored in the working arrays then
             # store the indices of these and work out the index in the target TIME MEAN array. Then stop searching.
             for year_index, possible_year in enumerate(year_ann):
                 ind = np.argwhere(year_working == possible_year)
                 if len(ind) == ntimes_to_keep_while_working:
                     indices_for_meaning = ind.flatten()
+                    index_of_timemean = year_index
+                    reached_meaning_window = True
+                    break
+        elif JJA:
+            # Check each year. If we have the correct months for a summer mean stored in the working arrays then
+            # store the indices of these and work out the index in the target TIME MEAN array. Then stop searching.
+            for season_index in range(nseasons):
+                ind = np.argwhere((mon_working == (season_index * 3 + 1)) | (mon_working == (season_index * 3 + 2)) | (mon_working == (season_index * 3 + 3)))
+                if len(ind) == ntimes_to_keep_while_working:
+                    indices_for_meaning = ind.flatten()
+                    year_index = np.argwhere(year_ann == year_working[ind[0]])
                     index_of_timemean = year_index
                     reached_meaning_window = True
                     break

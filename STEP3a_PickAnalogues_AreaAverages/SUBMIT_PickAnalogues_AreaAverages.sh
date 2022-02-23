@@ -4,7 +4,7 @@
 
 analogue_var="SST"
 #analogue_var="DepthAverageT"
-forecast_var="SST"
+forecast_var="SAT"
 rmse_method="True"
 pass_number="1"
 remake_saves="True"
@@ -46,8 +46,8 @@ windows="35"
 # N, E, S, W
 target_domains="+75+45+45-05 +65+00+00-90 +65+10+45-60 +50+00+40-70 +30+20+00-85 +30+20+05-60"
 # target_domains="+30+20+00-85 +50+00+40-70"
-# target_domains="+065+000+000-090 +065+010+045-060 +030+100-030+040 +045+015+035-025"
-target_domains="+030+100-030+040"
+# target_domains="+065+000+000-090 +065+010+045-060 +030+100-030+040 +045+015+035-025 +005-120-005-170"
+target_domains="-030-120-050-170"
 
 smoothings="1 11 21"
 smoothings="5"

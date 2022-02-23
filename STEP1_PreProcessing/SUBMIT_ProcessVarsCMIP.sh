@@ -2,7 +2,7 @@
 # sleep 1h
 echo "Beginning loops!"
 
-var=SAT
+var=SST
 cursory_initial_check="True"
 echo "Running for username: $USER"
 usr=$USER
@@ -70,7 +70,8 @@ sleep 1
 
 remake_saves="True"
 testing="False"
-seasonal="False"
+#seasonal="False"
+period="JJA"	#options: seasonal, annual, JJA
 time_series_only="False"
 
 if [[ $testing == "True" ]]
@@ -80,25 +81,43 @@ else
   test_string=""
 fi
 
-if [[ $seasonal == "True" ]]
-then
-  period="Seasonal"
-else
-  period="Annual"
-fi
+#if [[ $seasonal == "True" ]]
+#then
+#  period="Seasonal"
+#else
+#  period="Annual"
+#fi
 
 if [[ $var == "SST" ]]
 then
-        realm="Omon"
-        var_cmip="thetao"
+  if [[ $projects == "CMIP5" ]]
+  then
+    realm="ocean/Omon"
+    var_cmip="thetao"
+  else
+    realm="Omon"
+    var_cmip="thetao"
+  fi
 elif [[ $var == "SAT" ]]
 then
-        realm="Amon"
-        var_cmip="tas"
+  if [[ $projects == "CMIP5" ]]
+  then
+    realm="atmos/Amon"
+    var_cmip="tas"
+  else
+    realm="Amon"
+    var_cmip="tas"
+  fi
 elif [[ $var == "MSLP" ]]
 then
-        realm="Amon"
-        var_cmip="psl"
+  if [[ $projects == "CMIP5" ]]
+  then
+    realm="atmos/Amon"
+    var_cmip="psl"
+  else
+    realm="Amon"
+    var_cmip="psl"
+  fi
 fi
 
 requiredDirectories="$output_dir $datadir"
@@ -107,6 +126,8 @@ do
   echo $requiredDirectory
   mkdir -p $requiredDirectory
 done
+
+echo "${realm}"
 
 while read model
 do
@@ -129,7 +150,7 @@ do
                                                 err1=$?
                                         elif [[ $project == "CMIP5" ]]
                                         then
-                                                ls /badc/cmip5/data/cmip5/output1/*/${model}/${experiment}/mon/ocean/${realm}/r${ens_mem}i*/latest/${var_cmip} > /dev/null 2>&1
+                                                ls /badc/cmip5/data/cmip5/output1/*/${model}/${experiment}/mon/${realm}/r${ens_mem}i*/latest/${var_cmip} > /dev/null 2>&1
                                                 err2=$?
                                         fi
                                 done
@@ -139,7 +160,7 @@ do
         then
           echo " == No input data, skipping..."
           echo "/badc/cmip6/data/CMIP6/*/*/${model}/*${experiment}/r${ens_mem}i*/${realm}/${var_cmip}/g*/latest"
-          echo "/badc/cmip5/data/cmip5/output1/*/${model}/${experiment}/mon/ocean/${realm}/r${ens_mem}i*/latest/${var_cmip}"
+          echo "/badc/cmip5/data/cmip5/output1/*/${model}/${experiment}/mon/${realm}/r${ens_mem}i*/latest/${var_cmip}"
           run_this="False"
         fi
                         fi

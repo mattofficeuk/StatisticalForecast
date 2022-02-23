@@ -77,7 +77,7 @@ already_read_basin = False
 already_read_salinity = False
 radius_earth = 6371229.
 deg2rad = np.pi / 180.
-regions = ['europe1']
+regions = ['europe1', 'south_europe']
 
 cmip5_list_file = list_location + '/cmip5_list.txt'
 cmip6_list_file = list_location + '/cmip6_list.txt'
@@ -192,9 +192,9 @@ else:
 
 # save_file = '{:s}/{:s}_SAT_{:s}_{:s}{:s}_Monthly{:s}.pkl'.format(save_dir, project, model, experiment, ens_mem_string, time_series_only_string)
 # save_file_ann = '{:s}/{:s}_SAT_{:s}_{:s}{:s}_Annual{:s}.pkl'.format(save_dir, project, model, experiment, ens_mem_string, time_series_only_string)
-save_file_regridded = '{:s}/{:s}_SAT_{:s}_{:s}{:s}_Annual_Regridded{:s}.nc'.format(save_dir, project, model, experiment, ens_mem_string, time_series_only_string)
-save_file_mask = '{:s}/{:s}_SAT_{:s}_{:s}{:s}_Annual_mask{:s}.nc'.format(save_dir, project, model, experiment, ens_mem_string, time_series_only_string)
-save_file_timeseries = '{:s}/{:s}_SAT_{:s}_{:s}{:s}_Annual_timeseries{:s}.nc'.format(save_dir, project, model, experiment, ens_mem_string, time_series_only_string)
+save_file_regridded = '{:s}/{:s}_SATfield_{:s}_{:s}{:s}_Annual.nc'.format(save_dir, project, model, experiment, ens_mem_string, time_series_only_string)
+save_file_mask = '{:s}/{:s}_SATmask_{:s}_{:s}{:s}_Annual.nc'.format(save_dir, project, model, experiment, ens_mem_string, time_series_only_string)
+save_file_timeseries = '{:s}/{:s}_SATtimeser_{:s}_{:s}{:s}_Annual.nc'.format(save_dir, project, model, experiment, ens_mem_string, time_series_only_string)
 if TESTING:
     # save_file += '.TEST'
     # save_file_ann += '.TEST'
@@ -502,10 +502,11 @@ if not time_series_only:
         sat_regridded[tt, :, :] = interpolate.griddata(np.array([lat.ravel(), lon.ravel()]).T,
                                                        sat_ann[tt, :, :].ravel(), (lat_re, lon_re),
                                                        method='linear')
-    mask_regridded = interpolate.griddata(np.array([lat.ravel(), lon.ravel()]).T,
+    mask_regridded1 = interpolate.griddata(np.array([lat.ravel(), lon.ravel()]).T,
                                           sat[0, :, :].mask.ravel(), (lat_re, lon_re),
                                           method='linear')
-    sat_regridded = np.ma.array(sat_regridded, mask=np.repeat(mask_regridded[np.newaxis, :, :], nt_in, axis=0))
+    mask_regridded = np.repeat(mask_regridded1[np.newaxis, :, :], nt_in, axis=0)
+    sat_regridded = np.ma.array(sat_regridded, mask=mask_regridded)
 
 # ==================
 # Save the data (annual version only?)
@@ -538,17 +539,17 @@ for region in regions:
 print(sat_regridded.shape)
 print(mask_regridded.shape)
 
-sat_field = xr.DataArray(sat_regridded, name='SAT', dims = ['time','y','x'], coords = {'time': (['time'],year_ann), 'lat': (['y','x'],lat), 'lon': (['y','x'],lon)}).to_dataset(name='SAT')
-sat_mask = xr.DataArray(mask_regridded, name="mask", dims = ['time','y','x'], coords = {'time': (['time'],year_ann), 'lat': (['y','x'],lat), 'lon': (['y','x'],lon)}).to_dataset(name='mask')
+sat_field = xr.DataArray(sat_regridded, name='SAT', dims = ['time','y','x'], coords = {'time': (['time'],year_ann), 'lat': (['y','x'],lat_re), 'lon': (['y','x'],lon_re)}).to_dataset(name='SAT')
+sat_mask = xr.DataArray(mask_regridded, name="mask", dims = ['time','y','x'], coords = {'time': (['time'],year_ann), 'lat': (['y','x'],lat_re), 'lon': (['y','x'],lon_re)}).to_dataset(name='mask')
 
-print("Saving SAT data: {:s} and {:s}".format(save_file_regridded,save_file_timeser))
+print("Saving SAT data: {:s} and {:s}".format(save_file_regridded,save_file_timeseries))
 #print(sst_timesers.shape,sst_ann.shape, area.shape, lon.shape, lat.shape, year_ann.shape)
 
 if time_series_only:
     #ds = xr.Dataset({'SST': (('time'), sst_timesers)}, coords={'region':regions,'time':year_ann})
-    sat_timesers.to_netcdf(path=save_file_timeser,format="NETCDF4")
+    sat_timesers.to_netcdf(path=save_file_timeseries,format="NETCDF4")
 else:
-    sat_timesers.to_netcdf(path=save_file_timeser,format="NETCDF4")
+    sat_timesers.to_netcdf(path=save_file_timeseries,format="NETCDF4")
     sat_field.to_netcdf(path=save_file_regridded,format="NETCDF4")
     sat_mask.to_netcdf(path=save_file_mask,format="NETCDF4")
 

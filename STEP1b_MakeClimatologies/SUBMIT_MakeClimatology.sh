@@ -3,9 +3,10 @@
 echo "Beginning loops!"
 
 ## ==================
-## Current options are SAT or SST
+## Current options are SAT or SST; annual or JJA
 ## ==================
-var=SAT
+var=SST
+seas=JJA
 
 echo "Running for username: $USER"
 usr=$USER
@@ -18,7 +19,7 @@ fi
 
 output_dir=/work/scratch-nopw/${usr}/output1b
 datadir=/work/scratch-nopw/${usr}/CMIP_${var}
-runscript=${scripts_dir}/STEP1b_MakeClimatologies/MakeModel${var}Clim.py
+runscript=${scripts_dir}/STEP1b_MakeClimatologies/MakeModelSSTClim.py
 lists_dir=${scripts_dir}/model_lists
 queue="short-serial"
 max_jobs=5000
@@ -44,7 +45,7 @@ do
 
   # ${scripts_dir}/queue_spacer_sbatch.sh $max_jobs  # This will check every 120s if I have less than 100 jobs in the Q
 
-  cmd="sbatch -p $queue -t 6:00:00 -n 1 -o ${output} -e ${error} ${runscript} ${model} ${var}"
+  cmd="sbatch -p $queue -t 6:00:00 -n 1 -o ${output} -e ${error} ${runscript} ${model} ${var} ${seas}"
   echo $cmd
 
   $cmd

@@ -26,6 +26,7 @@ from scipy import interpolate
 import sys
 import hashlib
 import xarray as xr
+import json
 
 # ==============
 # Constants we're reading in
@@ -183,10 +184,13 @@ elif strong_forcing_only:
     skill_base_info += '_StrongForcing{:d}'.format(earliest_hist)
     skill_base_forecast += '_StrongForcing{:d}'.format(earliest_hist)
     skill_base_means += '_StrongForcing{:d}'.format(earliest_hist)
+skill_base_info_json = skill_base_info
 skill_base_info += '.nc'
+skill_base_info_json += '.json'
 skill_base_forecast += '.nc'
 skill_base_means += '.nc'
 skill_file_info = os.path.join(skill_output_dir, skill_base_info)
+skill_file_info_json = os.path.join(skill_output_dir, skill_base_info_json)
 skill_file_forecast = os.path.join(skill_output_dir, skill_base_forecast)
 skill_file_means = os.path.join(skill_output_dir, skill_base_means)
 print("Will write to:\n   {:s} and {:s} and {:s}\n".format(skill_file_info,skill_file_forecast,skill_file_means))
@@ -610,6 +614,18 @@ def check_allowed_file(filename, analogue_var, forecast_var):
     else:
         return True
 
+#This is required to appropriately write the _info file to .json
+class NpEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        if isinstance(obj, np.floating):
+            return float(obj)
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        #return super(NpEncoder, self).default(obj)
+        return json.JSONEncoder.default(self,obj)
+
 # ==================
 # Now finally process the data
 # ==================
@@ -755,8 +771,9 @@ trend_corr_info_write = trend_corr_info[:,:,0]
 
 info_xr = xr.DataArray(ann_corr_info_write, name='ann_corr_info', dims = ['time','member'], coords = {'time': (['time'],year_analogue_obs), 'member': (['member'],mem_array)}).to_dataset(name='ann_corr_info')
 info_xr['trend_corr_info'] = xr.DataArray(trend_corr_info_write, name='trend_corr_info', dims = ['time','member'], coords = {'time': (['time'],year_analogue_obs), 'member': (['member'],mem_array)})
-#info_xr = xr.DataArray(ann_corr_info, name='ann_corr_info', dims = ['time','member','info'], coords = {'time': (['time'],year_analogue_obs), 'member': (['member'],mem_array), 'info': (['info'],info_array)}).to_dataset(name='ann_corr_info')
-#info_xr['trend_corr_info'] = xr.DataArray(trend_corr_info, name='trend_corr_info', dims = ['time','member','info'], coords = {'time': (['time'],year_analogue_obs), 'member': (['member'],mem_array), 'info': (['info'],info_array)})
+info_xr2 = xr.DataArray(ann_corr_info, name='ann_corr_info', dims = ['time','member','info'], coords = {'time': (['time'],year_analogue_obs), 'member': (['member'],mem_array), 'info': (['info'],info_array)}).to_dataset(name='ann_corr_info')
+info_xr2['trend_corr_info'] = xr.DataArray(trend_corr_info, name='trend_corr_info', dims = ['time','member','info'], coords = {'time': (['time'],year_analogue_obs), 'member': (['member'],mem_array), 'info': (['info'],info_array)})
+info_xr3 = info_xr2.to_dict()
 
 forecast_xr = xr.DataArray(ann_forecast, name='ann_forecast', dims = ['time','member','ntimes'], coords = {'time': (['time'],year_analogue_obs), 'member': (['member'],mem_array), 'ntimes': (['ntimes'],ntimes_array)}).to_dataset(name='ann_forecast')
 forecast_xr['trend_forecast'] = xr.DataArray(trend_forecast, name='trend_forecast', dims = ['time','member','ntimes'], coords = {'time': (['time'],year_analogue_obs), 'member': (['member'],mem_array), 'ntimes': (['ntimes'],ntimes_array)})
@@ -778,7 +795,13 @@ info_xr.to_netcdf(path=skill_file_info,format="NETCDF4")
 forecast_xr.to_netcdf(path=skill_file_forecast,format="NETCDF4")
 means_xr.to_netcdf(path=skill_file_means,format="NETCDF4")
 
+print(info_xr3)
+#info_json = json.dumps(info_xr3, cls=NpEncoder)
+with open(skill_file_info_json, 'w') as handle:
+    json_dump = json.dump(info_xr3, handle, cls=NpEncoder)
+
+
 t4 = time.time()
-print("Time taken to write save-file = {:.2f}".format((t4 - t3) / 60.))
+print("Time taken to write save-files = {:.2f}".format((t4 - t3) / 60.))
 
 print("COMPLETE!")

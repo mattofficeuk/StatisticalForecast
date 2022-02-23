@@ -2,7 +2,7 @@
 
 #sleep 2h
 
-var=SST
+var=SAT
 #var=DepthAverageT
 echo "Running for username: $USER"
 usr=$USER
@@ -88,7 +88,7 @@ windows="35"
 target_domains="+75+45+45-05 +65+00+00-90 +65+10+45-60 +50+00+40-70 +30+20+00-85 +30+20+05-60"
 # target_domains="+65+00+00-90 +65+10+45-60 +50+00+40-70 +30+20+00-85 +30+20+05-60"
 target_domains="+065+000+000-090 +065+010+045-060 +030+100-030+040 +005-120-005-170 +045+015+035-025" #added Indian Ocean (cf Brady's work), ENSO3.4 and ENAMED
-target_domains="+005-120-005-170"
+target_domains="-030-120-050-170"
 
 smoothings="1 5 11 21"
 smoothings="1 11 21"
