@@ -46,11 +46,17 @@ list_location = sys.argv[7]
 
 print('Inputs: ', sys.argv)
 
+seasonal = False
+annual = False
+JJA = False
+
 if period_string == 'Seasonal':
     seasonal = True
     save_dir += '_Seas'
 elif period_string == 'Annual':
-    seasonal = False
+    annual = True
+elif period_string == 'JJA':
+    JJA = True
 else:
     raise ValueError('period_string unknown')
 
@@ -192,9 +198,14 @@ else:
 
 # save_file = '{:s}/{:s}_SAT_{:s}_{:s}{:s}_Monthly{:s}.pkl'.format(save_dir, project, model, experiment, ens_mem_string, time_series_only_string)
 # save_file_ann = '{:s}/{:s}_SAT_{:s}_{:s}{:s}_Annual{:s}.pkl'.format(save_dir, project, model, experiment, ens_mem_string, time_series_only_string)
-save_file_regridded = '{:s}/{:s}_SATfield_{:s}_{:s}{:s}_Annual.nc'.format(save_dir, project, model, experiment, ens_mem_string, time_series_only_string)
-save_file_mask = '{:s}/{:s}_SATmask_{:s}_{:s}{:s}_Annual.nc'.format(save_dir, project, model, experiment, ens_mem_string, time_series_only_string)
-save_file_timeseries = '{:s}/{:s}_SATtimeser_{:s}_{:s}{:s}_Annual.nc'.format(save_dir, project, model, experiment, ens_mem_string, time_series_only_string)
+if annual:
+    save_file_regridded = '{:s}/{:s}_SATfield_{:s}_{:s}{:s}_Annual.nc'.format(save_dir, project, model, experiment, ens_mem_string, time_series_only_string)
+    save_file_mask = '{:s}/{:s}_SATmask_{:s}_{:s}{:s}_Annual.nc'.format(save_dir, project, model, experiment, ens_mem_string, time_series_only_string)
+    save_file_timeseries = '{:s}/{:s}_SATtimeser_{:s}_{:s}{:s}_Annual.nc'.format(save_dir, project, model, experiment, ens_mem_string, time_series_only_string)
+elif JJA:
+    save_file_regridded = '{:s}/{:s}_SATfield_{:s}_{:s}{:s}_JJA.nc'.format(save_dir, project, model, experiment, ens_mem_string, time_series_only_string)
+    save_file_mask = '{:s}/{:s}_SATmask_{:s}_{:s}{:s}_JJA.nc'.format(save_dir, project, model, experiment, ens_mem_string, time_series_only_string)
+    save_file_timeseries = '{:s}/{:s}_SATtimeser_{:s}_{:s}{:s}_JJA.nc'.format(save_dir, project, model, experiment, ens_mem_string, time_series_only_string)
 if TESTING:
     # save_file += '.TEST'
     # save_file_ann += '.TEST'
@@ -478,8 +489,10 @@ for iyr, yy in enumerate(year_ann):
     for iseason, ss in enumerate(seasonal_cycle):
         if seasonal:
             ind = np.argwhere((year == yy) & ((mon == (iseason * 3 + 1)) | (mon == (iseason * 3 + 2)) | (mon == (iseason * 3 + 3))))
-        else:
-            ind = np.argwhere(year == yy)
+        elif annual:
+            ind = np.argwhere(year == yy) 
+        elif JJA:
+            ind = np.argwhere((year == yy) & ((mon == (6 + 1)) | (mon == (6 + 2)) | (mon == (6 + 3))))
 
         sat_ann[iyr * nseasons + iseason, :, :] = sat[ind, :, :].mean(axis=0)
         for region in regions:

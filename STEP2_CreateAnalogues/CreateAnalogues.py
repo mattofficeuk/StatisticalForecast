@@ -65,14 +65,15 @@ import mfilter
 model = sys.argv[1]
 experiment = sys.argv[2]
 ens_mem = sys.argv[3]
-window = np.long(sys.argv[4])
-target_domain_string = sys.argv[5]
-smoothing = np.long(sys.argv[6])  # This is the x/y (regridded) spatial smoothing
-testing = sys.argv[7]
-clim_string = sys.argv[8]
-concatenate_string = sys.argv[9] # Whether to try and merge available future experiments into the historical ones (but not the other
+seas = sys.argv[4]
+window = np.long(sys.argv[5])
+target_domain_string = sys.argv[6]
+smoothing = np.long(sys.argv[7])  # This is the x/y (regridded) spatial smoothing
+testing = sys.argv[8]
+clim_string = sys.argv[9]
+concatenate_string = sys.argv[10] # Whether to try and merge available future experiments into the historical ones (but not the other
                                  # way around) in order to avoid an artificial cutoff around 2005/2015
-scripts_dir = sys.argv[10]
+scripts_dir = sys.argv[11]
 
 clim_start = int(clim_string[:4])
 clim_end = int(clim_string[5:])
@@ -125,14 +126,14 @@ else:
 # ==================
 # Note the final target save file, does it already exist?
 # ==================
-processed_base = '{:s}_{:s}_{:s}_{:s}-{:s}_Window{:d}{:s}_Spatial{:s}Processed{:s}{:s}'
-processed_filled = processed_base.format(analogue_var, target_domain_string, model, experiment, ens_mem,
+processed_base = '{:s}_{:s}_{:s}_{:s}_{:s}-{:s}_Window{:d}{:s}_Spatial{:s}Processed{:s}{:s}'
+processed_filled = processed_base.format(analogue_var, target_domain_string, seas, model, experiment, ens_mem,
                                          window, smoothing_string, residual_string, testing_string, rmse_string)
 processed_file = os.path.join(processed_output_dir, processed_filled) + '.nc'
 print(processed_file)
 
-target_saved_base = '{:s}ObsSaved_{:s}_Window{:d}{:s}_Spatial{:s}Processed{:s}{:s}.nc'
-target_saved_filled = target_saved_base.format(analogue_var, target_domain_string, window, smoothing_string,
+target_saved_base = '{:s}ObsSaved_{:s}_{:s}_Window{:d}{:s}_Spatial{:s}Processed{:s}{:s}.nc'
+target_saved_filled = target_saved_base.format(analogue_var, target_domain_string, seas, window, smoothing_string,
                                                residual_string, testing_string, rmse_string)
 target_saved_file = os.path.join(processed_output_dir, target_saved_filled)
 print(target_saved_file)
@@ -163,8 +164,8 @@ if save_trends:
     if processed_filled not in requested_files:
         raise ValueError('Will not continue. Only saving trends files and this one is not requested: {:s}'.format(processed_filled))
 
-    trends_base = '{:s}_SavedTrends_{:s}_{:s}_{:s}-{:s}_Window{:d}{:s}_Spatial{:s}Processed{:s}{:s}.nc'
-    trends_filled = trends_base.format(analogue_var, target_domain_string, model, experiment, ens_mem, window,
+    trends_base = '{:s}_SavedTrends_{:s}_{:s}_{:s}_{:s}-{:s}_Window{:d}{:s}_Spatial{:s}Processed{:s}{:s}.nc'
+    trends_filled = trends_base.format(analogue_var, target_domain_string, seas, model, experiment, ens_mem, window,
                                        smoothing_string, residual_string, testing_string, rmse_string)
     trends_file = os.path.join(processed_output_dir, trends_filled)
     print(trends_file)
@@ -195,14 +196,24 @@ elif model in cmip6_models:
 else:
     raise ValueError("Unknown model")
 
-if experiment == 'piControl':
-    base_file_field = '{:s}_{:s}field_{:s}_{:s}_Annual.nc'.format(project, analogue_var, model, experiment)
-    base_file_timeser = '{:s}_{:s}timeser_{:s}_{:s}_Annual.nc'.format(project, analogue_var, model, experiment)
-    base_file_mask = '{:s}_{:s}mask_{:s}_{:s}_Annual.nc'.format(project, analogue_var, model, experiment)
+if experiment == "piControl":
+    if seas == 'annual':
+        base_file_field = '{:s}_{:s}field_{:s}_{:s}_Annual.nc'.format(project, analogue_var, model, experiment)
+        base_file_timeser = '{:s}_{:s}timeser_{:s}_{:s}_Annual.nc'.format(project, analogue_var, model, experiment)
+        base_file_mask = '{:s}_{:s}mask_{:s}_{:s}_Annual.nc'.format(project, analogue_var, model, experiment)
+    else:
+        base_file_field = '{:s}_{:s}field_{:s}_{:s}_JJA.nc'.format(project, analogue_var, model, experiment)
+        base_file_timeser = '{:s}_{:s}timeser_{:s}_{:s}_JJA.nc'.format(project, analogue_var, model, experiment)
+        base_file_mask = '{:s}_{:s}mask_{:s}_{:s}_JJA.nc'.format(project, analogue_var, model, experiment)
 else:
-    base_file_field = '{:s}_{:s}field_{:s}_{:s}-{:s}_Annual.nc'.format(project, analogue_var, model, experiment, ens_mem)
-    base_file_timeser = '{:s}_{:s}timeser_{:s}_{:s}-{:s}_Annual.nc'.format(project, analogue_var, model, experiment, ens_mem)
-    base_file_mask = '{:s}_{:s}mask_{:s}_{:s}-{:s}_Annual.nc'.format(project, analogue_var, model, experiment, ens_mem)
+    if seas == 'annual':
+        base_file_field = '{:s}_{:s}field_{:s}_{:s}-{:s}_Annual.nc'.format(project, analogue_var, model, experiment, ens_mem)
+        base_file_timeser = '{:s}_{:s}timeser_{:s}_{:s}-{:s}_Annual.nc'.format(project, analogue_var, model, experiment, ens_mem)
+        base_file_mask = '{:s}_{:s}mask_{:s}_{:s}-{:s}_Annual.nc'.format(project, analogue_var, model, experiment, ens_mem)
+    else:
+        base_file_field = '{:s}_{:s}field_{:s}_{:s}-{:s}_JJA.nc'.format(project, analogue_var, model, experiment, ens_mem)
+        base_file_timeser = '{:s}_{:s}timeser_{:s}_{:s}-{:s}_JJA.nc'.format(project, analogue_var, model, experiment, ens_mem)
+        base_file_mask = '{:s}_{:s}mask_{:s}_{:s}-{:s}_JJA.nc'.format(project, analogue_var, model, experiment, ens_mem)
 this_file_field = os.path.join(datadir, base_file_field)
 print("Attempting to read: {:s}".format(this_file_field))
 this_file_timeser = os.path.join(datadir, base_file_timeser)
@@ -505,7 +516,10 @@ def check_and_pad(sst_in, year_in):
     return sst_model, year_model
 
 def find_climatology_for_model(model):
-    climatology_file = os.path.join(datadir, 'CMIP_{:s}_{:s}_historical-EnsMn_TM{:d}-{:d}_Annual.nc'.format(analogue_var, model, clim_start, clim_end))
+    if seas == "annual":
+        climatology_file = os.path.join(datadir, 'CMIP_{:s}_{:s}_historical-EnsMn_TM{:d}-{:d}_Annual.nc'.format(analogue_var, model, clim_start, clim_end))
+    else:
+        climatology_file = os.path.join(datadir, 'CMIP_{:s}_{:s}_historical-EnsMn_TM{:d}-{:d}_JJA.nc'.format(analogue_var, model, clim_start, clim_end))
     if os.path.isfile(climatology_file):
         #with open(climatology_file, 'rb') as handle:
         #    sst_clim = pickle.load(handle,encoding='latin')

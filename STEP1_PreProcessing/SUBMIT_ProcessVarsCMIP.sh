@@ -2,7 +2,7 @@
 # sleep 1h
 echo "Beginning loops!"
 
-var=SST
+var=SAT
 cursory_initial_check="True"
 echo "Running for username: $USER"
 usr=$USER

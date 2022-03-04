@@ -5,7 +5,7 @@ echo "Beginning loops!"
 ## ==================
 ## Current options are SAT or SST; annual or JJA
 ## ==================
-var=SST
+var=SAT
 seas=JJA
 
 echo "Running for username: $USER"
