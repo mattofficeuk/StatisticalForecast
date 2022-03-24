@@ -27,6 +27,9 @@ myhost = os.uname()[1]
 print("myhost = {:s}".format(myhost))
 usr = os.environ["USER"]
 
+## HACK to quickly re-add selection.py to my path
+modules_dir = '/home/users/{:s}/StatisticalForecast/python_modules'.format(usr)
+sys.path.append(modules_dir)
 
 if 'ciclad' in myhost:
     # Ciclad options
@@ -355,6 +358,7 @@ def regrid_sst(sst_in, year_in):
     nyrs = len(year_in)
     area = get_area()
     sst_regridded = np.ma.masked_all(shape=(nyrs, nj, ni))
+    mask_regridded = np.ma.masked_all(shape=(nyrs, nj, ni))
 
     for tt in range(nyrs):
 #         if tt not in [97, 98, 99, 100]: continue
@@ -366,11 +370,16 @@ def regrid_sst(sst_in, year_in):
                                                        sst_in[0, tt, :, :].ravel(), (lat_re, lon_re),
                                                        method='linear')
 
-    mask_regridded = interpolate.griddata(np.array([lat_in.ravel(), lon_in.ravel()]).T,
+        mask_regridded[tt, :, :] = interpolate.griddata(np.array([lat_in.ravel(), lon_in.ravel()]).T,
+                                                        sst_in[0, tt, :, :].mask.ravel(), (lat_re, lon_re),
+                                                        method='linear')
+
+    # mask_regridded = interpolate.griddata(np.array([lat_in.ravel(), lon_in.ravel()]).T,
     #                                      sst_in[0, 0, :, :].mask.ravel(), (lat_re, lon_re),
     #                                      method='linear')
     #print(mask_regridded)
-    sst_regridded = np.ma.array(sst_regridded, mask=np.repeat(mask_regridded[np.newaxis, :, :], nyrs))	#, axis=0))
+    #sst_regridded = np.ma.array(sst_regridded, mask=np.repeat(mask_regridded[np.newaxis, :, :], nyrs))	#, axis=0))
+    sst_regridded = np.ma.array(sst_regridded, mask=mask_regridded)	#, axis=0))
     print(sst_regridded.compress)
     return sst_regridded
 
