@@ -358,7 +358,6 @@ def regrid_sst(sst_in, year_in):
     nyrs = len(year_in)
     area = get_area()
     sst_regridded = np.ma.masked_all(shape=(nyrs, nj, ni))
-    mask_regridded = np.ma.masked_all(shape=(nyrs, nj, ni))
 
     for tt in range(nyrs):
 #         if tt not in [97, 98, 99, 100]: continue
@@ -370,16 +369,21 @@ def regrid_sst(sst_in, year_in):
                                                        sst_in[0, tt, :, :].ravel(), (lat_re, lon_re),
                                                        method='linear')
 
-        mask_regridded[tt, :, :] = interpolate.griddata(np.array([lat_in.ravel(), lon_in.ravel()]).T,
-                                                        sst_in[0, tt, :, :].mask.ravel(), (lat_re, lon_re),
-                                                        method='linear')
+    for tt in range(nyrs):
+        mask_regridded = interpolate.griddata(np.array([lat_in.ravel(), lon_in.ravel()]).T,
+                                              sst_in[0, tt, :, :].mask.ravel(), (lat_re, lon_re),
+                                              method='linear')
+        if np.count_nonzero(mask_regridded) != (nj * ni):
+            ## Zero is unmasked, so if the number of nonzeros is the same as the full array size then
+            ## we know we need to carry on looking. Done this way because it handles "nan" better
+            break
 
     # mask_regridded = interpolate.griddata(np.array([lat_in.ravel(), lon_in.ravel()]).T,
     #                                      sst_in[0, 0, :, :].mask.ravel(), (lat_re, lon_re),
     #                                      method='linear')
     #print(mask_regridded)
-    #sst_regridded = np.ma.array(sst_regridded, mask=np.repeat(mask_regridded[np.newaxis, :, :], nyrs))	#, axis=0))
-    sst_regridded = np.ma.array(sst_regridded, mask=mask_regridded)	#, axis=0))
+    sst_regridded = np.ma.array(sst_regridded, mask=np.repeat(mask_regridded[np.newaxis, :, :], nyrs))	#, axis=0))
+    # sst_regridded = np.ma.array(sst_regridded, mask=mask_regridded)	#, axis=0))
     print(sst_regridded.compress)
     return sst_regridded
 
