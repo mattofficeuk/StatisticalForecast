@@ -2,7 +2,7 @@
 # sleep 1h
 echo "Beginning loops!"
 
-var=SAT
+var=SST
 cursory_initial_check="True"
 echo "Running for username: $USER"
 usr=$USER
@@ -71,7 +71,7 @@ sleep 1
 remake_saves="True"
 testing="False"
 #seasonal="False"
-period="JJA"	#options: seasonal, annual, JJA
+period="MAM"	#options: seasonal, annual, JJA, MAM
 time_series_only="False"
 
 if [[ $testing == "True" ]]

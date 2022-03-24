@@ -32,18 +32,20 @@ import json
 # Constants we're reading in
 # ==============
 analogue_var = sys.argv[1]              # The variable used when creating the analogues
-forecast_var = sys.argv[2]              # The variable we are forecasting
-target_region = sys.argv[3]             # The region where we measure the skill
-num_mems_to_take = np.int(sys.argv[4])  # The number of ensemble members to use
-window = np.int(sys.argv[5])            # The window over which the analogue goodness was computed
-target_domain_string = sys.argv[6]      # The region we used to create the analogues
-smoothing = np.int(sys.argv[7])         # Whether the analogue data was pre-smoothed (and by how much)
-testing = sys.argv[8]                   # Testing mode
-pass_number = np.int(sys.argv[9])       # When picking the analogues, multiple passes might be required
-method = sys.argv[10]                   # How were the analogues created? Currently "Corr" or "RMSE" methods
-subset = sys.argv[11]                   # Whether to only pick from a subset of experients (investigating forcing)
-clim_string = sys.argv[12]              # The climatology period used in analogues and observations
-concatenate_string = sys.argv[13]       # Whether to analogues where we previously concatenated the historical+scenario runs
+analogue_seas = sys.argv[2]		# The season we are using when creating the analogue
+forecast_var = sys.argv[3]              # The variable we are forecasting
+forecast_seas = sys.argv[4]             # The season we are forecasting
+target_region = sys.argv[5]             # The region where we measure the skill
+num_mems_to_take = np.int(sys.argv[6])  # The number of ensemble members to use
+window = np.int(sys.argv[7])            # The window over which the analogue goodness was computed
+target_domain_string = sys.argv[8]      # The region we used to create the analogues
+smoothing = np.int(sys.argv[9])         # Whether the analogue data was pre-smoothed (and by how much)
+testing = sys.argv[10]                   # Testing mode
+pass_number = np.int(sys.argv[11])       # When picking the analogues, multiple passes might be required
+method = sys.argv[12]                   # How were the analogues created? Currently "Corr" or "RMSE" methods
+subset = sys.argv[13]                   # Whether to only pick from a subset of experients (investigating forcing)
+clim_string = sys.argv[14]              # The climatology period used in analogues and observations
+concatenate_string = sys.argv[15]       # Whether to analogues where we previously concatenated the historical+scenario runs
 
 picontrols_only = False
 skip_local_hist = False
@@ -162,14 +164,14 @@ with open(cmip6_list_file, 'r') as f:
 # ==================
 # Note the final target save file
 # ==================
-skill_template_info = 'ANALOGUE{:s}_FORECAST{:s}_DOMAIN{:s}_TARGET{:s}_WINDOW{:d}_MEMS{:d}{:s}_SpatialSkill{:s}{:s}{:s}{:s}_info'
-skill_base_info = skill_template_info.format(analogue_var, forecast_var, target_domain_string, target_region, window, num_mems_to_take,
+skill_template_info = 'ANALOGUE{:s}{:s}_FORECAST{:s}{:s}_DOMAIN{:s}_TARGET{:s}_WINDOW{:d}_MEMS{:d}{:s}_SpatialSkill{:s}{:s}{:s}{:s}_info'
+skill_base_info = skill_template_info.format(analogue_var, analogue_seas, forecast_var, forecast_seas, target_domain_string, target_region, window, num_mems_to_take,
                                    smoothing_string, pass_string, testing_string, rmse_string, concat_string)
-skill_template_forecast = 'ANALOGUE{:s}_FORECAST{:s}_DOMAIN{:s}_TARGET{:s}_WINDOW{:d}_MEMS{:d}{:s}_SpatialSkill{:s}{:s}{:s}{:s}_forecast'
-skill_base_forecast = skill_template_forecast.format(analogue_var, forecast_var, target_domain_string, target_region, window, num_mems_to_take,
+skill_template_forecast = 'ANALOGUE{:s}{:s}_FORECAST{:s}{:s}_DOMAIN{:s}_TARGET{:s}_WINDOW{:d}_MEMS{:d}{:s}_SpatialSkill{:s}{:s}{:s}{:s}_forecast'
+skill_base_forecast = skill_template_forecast.format(analogue_var, analogue_seas, forecast_var, forecast_seas, target_domain_string, target_region, window, num_mems_to_take,
                                    smoothing_string, pass_string, testing_string, rmse_string, concat_string)
-skill_template_means = 'ANALOGUE{:s}_FORECAST{:s}_DOMAIN{:s}_TARGET{:s}_WINDOW{:d}_MEMS{:d}{:s}_SpatialSkill{:s}{:s}{:s}{:s}_means'
-skill_base_means = skill_template_means.format(analogue_var, forecast_var, target_domain_string, target_region, window, num_mems_to_take,
+skill_template_means = 'ANALOGUE{:s}{:s}_FORECAST{:s}{:s}_DOMAIN{:s}_TARGET{:s}_WINDOW{:d}_MEMS{:d}{:s}_SpatialSkill{:s}{:s}{:s}{:s}_means'
+skill_base_means = skill_template_means.format(analogue_var, analogue_seas, forecast_var, forecast_seas, target_domain_string, target_region, window, num_mems_to_take,
                                    smoothing_string, pass_string, testing_string, rmse_string, concat_string)
 
 if picontrols_only:
@@ -200,7 +202,7 @@ if pass_number > 1:
         previous_pass_string = '_PASS{:d}'.format(pass_number - 1)
     else:
         previous_pass_string = ''
-    previous_skill_base = skill_template_info.format(analogue_var, forecast_var, target_domain_string, target_region, window, num_mems_to_take,
+    previous_skill_base = skill_template_info.format(analogue_var, analogue_seas, forecast_var, forecast_seas, target_domain_string, target_region, window, num_mems_to_take,
                                                 smoothing_string, previous_pass_string, testing_string, rmse_string, concat_string)
     previous_skill_base += '.nc'
     previous_skill_file = os.path.join(skill_output_dir, previous_skill_base)
@@ -437,9 +439,9 @@ def read_forecast_data(corr_info, nlead):
                 continue
 
             if experiment == 'piControl':
-                base_file_timeser = '{:s}_{:s}timeser_{:s}_{:s}_Annual.nc'.format(project, analogue_var, model, experiment)
+                base_file_timeser = '{:s}_{:s}timeser_{:s}_{:s}_{:s}.nc'.format(project, forecast_var, model, experiment, forecast_seas)
             else:
-                base_file_timeser = '{:s}_{:s}timeser_{:s}_{:s}-{:s}_Annual.nc'.format(project, analogue_var, model, experiment, ens_mem)
+                base_file_timeser = '{:s}_{:s}timeser_{:s}_{:s}-{:s}_{:s}.nc'.format(project, forecast_var, model, experiment, ens_mem, forecast_seas)
             this_file_timeser = os.path.join(forecast_datadir, base_file_timeser)
 
             if not os.path.isfile(this_file_timeser):
@@ -482,19 +484,29 @@ def read_forecast_data(corr_info, nlead):
             # "index" might not be correct if we're using different analogue/forecast variables
             if analogue_var != forecast_var:
                 if experiment == 'piControl':
-                    base_file = '{:s}_{:s}_{:s}_{:s}_Annual_Regridded.pkl'.format(project, analogue_var, model, experiment)
+                    base_file = '{:s}_{:s}timeser_{:s}_{:s}_{:s}.nc'.format(project, analogue_var, model, experiment, analogue_seas)
                 else:
-                    base_file = '{:s}_{:s}_{:s}_{:s}-{:s}_Annual_Regridded.pkl'.format(project, analogue_var, model, experiment, ens_mem)
+                    base_file = '{:s}_{:s}timeser_{:s}_{:s}-{:s}_{:s}.nc'.format(project, analogue_var, model, experiment, ens_mem, analogue_seas)
                 this_file2 = os.path.join(analogue_datadir, base_file)
 
                 if not os.path.isfile(this_file2):
                     print(tt, imem, corr_info[tt, imem, :])
                     raise ValueError("This file should exist: {:s}".format(this_file2))
 
-                with open(this_file2, 'rb') as handle:
-                    _, analogue_ts, _, _, _, year_in_analogue = pickle.load(handle, encoding='latin')
-                    analogue_ts  =  analogue_ts[analogue_ts.keys()[0]]
+                if os.path.isfile(this_file2):
+                    ds_analogue = xr.open_dataset(this_file2)
+                    ds_analogue = ds_analogue[target_region]
+                    print('Analogue time series loaded')
+                    #print(ds_timeser)
+                    analogue_ts = np.ma.masked_array(ds_analogue.values)
+                    #sst_ts_in  =  sst_ts_in[target_region]
+                    year_in_analogue = ds_analogue['time'].values
 
+                else:
+                    raise ValueError("{:s} does not exist".format(this_file2))
+                    continue
+
+                #analogue_ts  =  analogue_ts[analogue_ts.keys()[0]]
                 _, year_in_analogue = check_and_pad1d(analogue_ts, year_in_analogue)  #  Analogue data
                 chosen_year = year_in_analogue[index]
                 if chosen_year not in year_in:
@@ -658,6 +670,8 @@ else:
     trend_corr_info = ds_data[1]
     min_ann_corr = np.ma.min(ann_corr_info[:, :, 0], axis=1)
     min_trend_corr = np.ma.min(trend_corr_info[:, :, 0], axis=1)
+
+print(processed_files)
 
 for ifile, pf in enumerate(processed_files):
     print('{:d}/{:d} {:s}'.format(ifile+1, nfiles, pf))

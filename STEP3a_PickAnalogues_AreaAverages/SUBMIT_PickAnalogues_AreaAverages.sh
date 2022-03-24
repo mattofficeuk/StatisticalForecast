@@ -3,8 +3,10 @@
 #sleep 13h
 
 analogue_var="SST"
+analogue_seas="MAM"	#Options: Annual, MAM, JJA. CASE SENSITIVE!
 #analogue_var="DepthAverageT"
 forecast_var="SAT"
+forecast_seas="JJA"
 rmse_method="True"
 pass_number="1"
 remake_saves="True"
@@ -31,8 +33,8 @@ export PYTHONPATH="$scripts_dir/python_modules/:${PYTHONPATH}"
 
 # The forecast region
 target_regions="north_atlantic subpolar_gyre"
-# target_regions="europe1"
-target_regions="subpolar_gyre"
+target_regions="southern_europe"
+# target_regions="subpolar_gyre"
 
 num_mems_to_take_options="1 2 3 4 5 6 7 8 9 10 12 15 20 50 100 200 500 1000"
 # num_mems_to_take_options="20 50 100 200 500"
@@ -47,7 +49,7 @@ windows="35"
 target_domains="+75+45+45-05 +65+00+00-90 +65+10+45-60 +50+00+40-70 +30+20+00-85 +30+20+05-60"
 # target_domains="+30+20+00-85 +50+00+40-70"
 # target_domains="+065+000+000-090 +065+010+045-060 +030+100-030+040 +045+015+035-025 +005-120-005-170"
-target_domains="-030-120-050-170"
+target_domains="+045+015+035-025"
 
 smoothings="1 11 21"
 smoothings="5"
@@ -169,7 +171,7 @@ do
 
                 ${scripts_dir}/queue_spacer_sbatch.sh $max_jobs  # This will check every 120s if I have less than max_jobs jobs in the Q
 
-                cmd="sbatch -p $queue -t 24:00:00 -n 1 -o ${output} -e ${error} ${runscript} ${analogue_var} ${forecast_var} ${target_region} ${num_mems_to_take} ${window} ${target_domain} ${smoothing} ${testing} ${pass_number} ${method} ${subset} ${clim_string} ${concatenate_string}"
+                cmd="sbatch -p $queue -t 24:00:00 -n 1 -o ${output} -e ${error} ${runscript} ${analogue_var} ${analogue_seas} ${forecast_var} ${forecast_seas} ${target_region} ${num_mems_to_take} ${window} ${target_domain} ${smoothing} ${testing} ${pass_number} ${method} ${subset} ${clim_string} ${concatenate_string}"
                 echo $cmd
                 $cmd
 

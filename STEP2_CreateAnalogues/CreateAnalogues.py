@@ -48,6 +48,8 @@ else:
     hadisst_save_file_residual = '/home/users/{}/data/HadISST_AnnualMapCMIPStyleRegridded_Residual.pkl'.format(usr)
     en4_save_file = '/home/users/{}/data/EN4_0-500m_AnnualMapCMIPStyleRegridded.pkl'.format(usr)
     en4_save_file_residual = '/home/users/{}/data/EN4_0-500m_AnnualMapCMIPStyleRegridded_Residual.pkl'.format(usr)  # Not made yet
+    hadcrut_save_file = '/home/users/{}/data/HadCRUT4_AnnualMapCMIPStyleRegridded.pkl'.format(usr)
+
 
 def read_target_domain(in_string):
     out_list = []
@@ -202,18 +204,18 @@ if experiment == "piControl":
         base_file_timeser = '{:s}_{:s}timeser_{:s}_{:s}_Annual.nc'.format(project, analogue_var, model, experiment)
         base_file_mask = '{:s}_{:s}mask_{:s}_{:s}_Annual.nc'.format(project, analogue_var, model, experiment)
     else:
-        base_file_field = '{:s}_{:s}field_{:s}_{:s}_JJA.nc'.format(project, analogue_var, model, experiment)
-        base_file_timeser = '{:s}_{:s}timeser_{:s}_{:s}_JJA.nc'.format(project, analogue_var, model, experiment)
-        base_file_mask = '{:s}_{:s}mask_{:s}_{:s}_JJA.nc'.format(project, analogue_var, model, experiment)
+        base_file_field = '{:s}_{:s}field_{:s}_{:s}_{:s}.nc'.format(project, analogue_var, model, experiment, seas)
+        base_file_timeser = '{:s}_{:s}timeser_{:s}_{:s}_{:s}.nc'.format(project, analogue_var, model, experiment,seas)
+        base_file_mask = '{:s}_{:s}mask_{:s}_{:s}_{:s}.nc'.format(project, analogue_var, model, experiment, seas)
 else:
     if seas == 'annual':
         base_file_field = '{:s}_{:s}field_{:s}_{:s}-{:s}_Annual.nc'.format(project, analogue_var, model, experiment, ens_mem)
         base_file_timeser = '{:s}_{:s}timeser_{:s}_{:s}-{:s}_Annual.nc'.format(project, analogue_var, model, experiment, ens_mem)
         base_file_mask = '{:s}_{:s}mask_{:s}_{:s}-{:s}_Annual.nc'.format(project, analogue_var, model, experiment, ens_mem)
     else:
-        base_file_field = '{:s}_{:s}field_{:s}_{:s}-{:s}_JJA.nc'.format(project, analogue_var, model, experiment, ens_mem)
-        base_file_timeser = '{:s}_{:s}timeser_{:s}_{:s}-{:s}_JJA.nc'.format(project, analogue_var, model, experiment, ens_mem)
-        base_file_mask = '{:s}_{:s}mask_{:s}_{:s}-{:s}_JJA.nc'.format(project, analogue_var, model, experiment, ens_mem)
+        base_file_field = '{:s}_{:s}field_{:s}_{:s}-{:s}_{:s}.nc'.format(project, analogue_var, model, experiment, ens_mem, seas)
+        base_file_timeser = '{:s}_{:s}timeser_{:s}_{:s}-{:s}_{:s}.nc'.format(project, analogue_var, model, experiment, ens_mem, seas)
+        base_file_mask = '{:s}_{:s}mask_{:s}_{:s}-{:s}_{:s}.nc'.format(project, analogue_var, model, experiment, ens_mem, seas)
 this_file_field = os.path.join(datadir, base_file_field)
 print("Attempting to read: {:s}".format(this_file_field))
 this_file_timeser = os.path.join(datadir, base_file_timeser)
@@ -252,7 +254,7 @@ if os.path.isfile(this_file_field):
 else:
     raise ValueError("{:s} does not exist".format(this_file_field))
 
-print(sst_in)
+print(sst_in.compressed)
 
 if os.path.isfile(this_file_timeser):
     ds_timeser = xr.open_dataset(this_file_timeser)
@@ -319,12 +321,18 @@ if residual:
     elif analogue_var == 'DepthAverageT':
         with open(en4_save_file_residual, 'rb') as handle:
             target_sst_regridded, _, _, _, _, year_ann = pickle.load(handle,encoding='latin')
+    elif analogue_var == 'SAT':
+        with open(hadcrut_save_file_residual, 'rb') as handle:
+            target_sst_regridded, _, _, _, _, year_ann = pickle.load(handle,encoding='latin')
 else:
     if analogue_var == 'SST':
         with open(hadisst_save_file, 'rb') as handle:
             target_sst_regridded, _, _, _, _, year_ann = pickle.load(handle,encoding='latin')
     elif analogue_var == 'DepthAverageT':
         with open(en4_save_file, 'rb') as handle:
+            target_sst_regridded, _, _, _, _, year_ann = pickle.load(handle,encoding='latin')
+    elif analogue_var == 'SAT':
+        with open(hadcrut_save_file, 'rb') as handle:
             target_sst_regridded, _, _, _, _, year_ann = pickle.load(handle,encoding='latin')
 
 # Make climatology for later
@@ -351,19 +359,20 @@ def regrid_sst(sst_in, year_in):
     for tt in range(nyrs):
 #         if tt not in [97, 98, 99, 100]: continue
         print('{:d}/{:d}'.format(tt, nyrs))
-        print(len(np.array([lat_in.ravel(), lon_in.ravel()]).T))
-        print(len(sst_in[0, 0, :, :].ravel()))
-        print(len(sst_in[0, 0, :, :].mask.ravel()))
+        #print(len(np.array([lat_in.ravel(), lon_in.ravel()]).T))
+        #print(len(sst_in[0, 0, :, :].ravel()))
+        #print(len(sst_in[0, 0, :, :].mask.ravel()))
         sst_regridded[tt, :, :] = interpolate.griddata(np.array([lat_in.ravel(), lon_in.ravel()]).T,
                                                        sst_in[0, tt, :, :].ravel(), (lat_re, lon_re),
                                                        method='linear')
-    mask_regridded = interpolate.griddata(np.array([lat_in.ravel(), lon_in.ravel()]).T,
-                                          sst_in[0, 0, :, :].mask.ravel(), (lat_re, lon_re),
-                                          method='linear')
-    sst_regridded = np.ma.array(sst_regridded, mask=np.repeat(mask_regridded[np.newaxis, :, :], nyrs, axis=0))
-    return sst_regridded
 
-print(sst_in.mask)
+    mask_regridded = interpolate.griddata(np.array([lat_in.ravel(), lon_in.ravel()]).T,
+    #                                      sst_in[0, 0, :, :].mask.ravel(), (lat_re, lon_re),
+    #                                      method='linear')
+    #print(mask_regridded)
+    sst_regridded = np.ma.array(sst_regridded, mask=np.repeat(mask_regridded[np.newaxis, :, :], nyrs))	#, axis=0))
+    print(sst_regridded.compress)
+    return sst_regridded
 
 def mask_by_domain(sst_in, year_in):
     # TODO: If smoothing then increase this mask size appropriately so it won't be too small later
@@ -543,6 +552,10 @@ sst_regridded = regrid_sst(sst_model, year_model)
 print('Masking MODEL {:s}'.format(analogue_var))
 sst_masked = mask_by_domain(sst_regridded, year_model)
 
+print(sst_model)
+#print(sst_regridded.compressed)
+#print(sst_masked.compressed)
+
 print('Masking TARGET {:s}'.format(analogue_var))
 if 'target_masked' in target_keys:
     target_masked = target_saved['target_masked']
@@ -616,7 +629,7 @@ corr_trend = selection.csc(method, target_masked_trend, year_ann, sst_masked_tre
 
 # TEMPORAL FIX: Writing np arrays to xarray for exporting as .nc files.
 print("Forming xarray files for printing")
-print(corr_ann)
+print(corr_ann.compressed)
 corr_print = xr.DataArray(corr_ann, name="corr_ann", dims = ['time_pred','time'], coords = {'time_pred': (['time_pred'],year_ann),'time': (['time'],year_model)}).to_dataset(name='corr_ann')
 corr_print['corr_trend'] = xr.DataArray(corr_trend, name="corr_trend", dims = ['time_pred','time'], coords = {'time_pred': (['time_pred'],year_ann),'time': (['time'],year_model)})
 
