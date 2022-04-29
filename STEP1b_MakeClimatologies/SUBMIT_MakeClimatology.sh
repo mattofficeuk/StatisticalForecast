@@ -3,10 +3,10 @@
 echo "Beginning loops!"
 
 ## ==================
-## Current options are SAT or SST; annual or JJA
+## Current options are SAT or SST; annual, MAM or JJA
 ## ==================
-var=SAT
-seas=JJA
+var=SST
+seas=MAM
 
 echo "Running for username: $USER"
 usr=$USER

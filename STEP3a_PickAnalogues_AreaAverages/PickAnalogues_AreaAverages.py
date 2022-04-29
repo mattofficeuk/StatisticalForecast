@@ -278,6 +278,8 @@ else:
     with open(forecast_save_file, 'rb') as handle:
         print("Loading save file: {:s}".format(forecast_save_file))
         _, _, _, year_forecast_obs = pickle.load(handle, encoding='latin')
+        if forecast_var == 'SAT':
+            year_forecast_obs = year_forecast_obs[20::]
 
     if analogue_var == 'SST':
         analogue_save_file = hadisst_save_file
@@ -287,7 +289,10 @@ else:
         analogue_save_file = hadcrut4_save_file
     with open(analogue_save_file, 'rb') as handle:
         print("Loading save file: {:s}".format(analogue_save_file))
-        _, _, _, year_analogue_obs = pickle.load(handle, encoding='latin')
+        _, _, _, year_analogue_obs2 = pickle.load(handle, encoding='latin')
+        if forecast_var == 'SAT':
+            year_analogue_obs = year_analogue_obs2[0:147]
+            year_analogue_obs2 = year_analogue_obs2[0:149]
 
 nyrs_analogue = len(year_analogue_obs)
 nyrs_forecast = len(year_forecast_obs)
@@ -316,9 +321,11 @@ def keep_best_corrs(input_corr, min_corr, corr_info, model, experiment, ens_mem,
     # "input_corr" has analogue times, the rest have forecast times
     # Loop through the TARGET years
     for tt, year in enumerate(year_forecast_obs):
+        #print(year)
         if year in year_analogue_obs:
             tt_analogue = np.argwhere(year_analogue_obs == year)[0][0]
         else:
+            print("This year exists in the forecast data, but not the analogue data")
             # This year exists in the forecast data, but not the analogue data
             continue
         this_corr_info = corr_info[tt, :, :]
@@ -415,6 +422,8 @@ def read_forecast_data(corr_info, nlead):
     forecast = np.ma.masked_all(shape=(nyrs_forecast, num_mems_to_take, nlead))
     analogue_means = np.ma.masked_all(shape=(nyrs_forecast, num_mems_to_take, len(mean_windows)))
     analogue_sds = np.ma.masked_all(shape=(nyrs_forecast, num_mems_to_take, len(mean_windows)))
+    print(cmip5_models)
+    print(cmip6_models)
     for tt, year in enumerate(year_forecast_obs):
         loop_t0 = time.time()
         print('{:d}/{:d}'.format(tt+1, nyrs_forecast))
@@ -422,19 +431,28 @@ def read_forecast_data(corr_info, nlead):
             #continue ###########################################
 
         for imem in range(num_mems_to_take):
-            model = corr_info[tt, imem, 1]
+            model = corr_info[tt, imem, 1]  
             experiment = corr_info[tt, imem, 2]
             ens_mem = corr_info[tt, imem, 3]
             index = corr_info[tt, imem, 4]  # At lead=0
- 
+
+            #print(model)
+            #print(experiment)
+            #print(ens_mem)
+            #print(index) 
+
             if not isinstance(model, str):
+                print("No model found")
                 continue
+            else:
+                 print(model)
 
             if model in cmip5_models:
                 project = 'CMIP5'
             elif model in cmip6_models:
                 project = 'CMIP6'
             else:
+                print("Project designation not found")
                 # Probably an empty string due to removing last correlations just before finishing keep_best_corrs() loop
                 continue
 
@@ -483,6 +501,7 @@ def read_forecast_data(corr_info, nlead):
 
             # "index" might not be correct if we're using different analogue/forecast variables
             if analogue_var != forecast_var:
+                print("Analogue ({:s}) and forecast ({:s}) variable differ".format(analogue_var, forecast_var))
                 if experiment == 'piControl':
                     base_file = '{:s}_{:s}timeser_{:s}_{:s}_{:s}.nc'.format(project, analogue_var, model, experiment, analogue_seas)
                 else:
@@ -493,11 +512,16 @@ def read_forecast_data(corr_info, nlead):
                     print(tt, imem, corr_info[tt, imem, :])
                     raise ValueError("This file should exist: {:s}".format(this_file2))
 
+                if analogue_var == 'SAT':
+                    target_region2 = 'south_europe'
+                elif analogue_var == 'SST':
+                    target_region2 = 'north_atlantic'
+
                 if os.path.isfile(this_file2):
                     ds_analogue = xr.open_dataset(this_file2)
-                    ds_analogue = ds_analogue[target_region]
+                    ds_analogue = ds_analogue[target_region2]
                     print('Analogue time series loaded')
-                    #print(ds_timeser)
+                    #print(ds_analogue)
                     analogue_ts = np.ma.masked_array(ds_analogue.values)
                     #sst_ts_in  =  sst_ts_in[target_region]
                     year_in_analogue = ds_analogue['time'].values
@@ -510,18 +534,18 @@ def read_forecast_data(corr_info, nlead):
                 _, year_in_analogue = check_and_pad1d(analogue_ts, year_in_analogue)  #  Analogue data
                 chosen_year = year_in_analogue[index]
                 if chosen_year not in year_in:
-                    print("This REALLY should exist. Forecast file is probably missing beginning/end", chosen_year, index, this_file, this_file2)
+                    print("This REALLY should exist. Forecast file is probably missing beginning/end", chosen_year, index, this_file_timeser, this_file2)
                     continue
                 index2 = np.argwhere(year_in == chosen_year)[0][0]
                 if index2 != index:
                     print("Changing index from {:d} to {:d}, Y{:d}. {:s} {:s} {:s}".format(index, index2, chosen_year, model, experiment, ens_mem))
-                    print(this_file)
+                    print(this_file_timeser)
                     print(this_file2)
                 index = index2
 
             # ntimes is to account for when the source data has less than nlead data points remaining
             ntimes = np.min([nlead, len(sst_ts_in[index:])])
-            forecast[tt, imem, :ntimes] = sst_ts_in[index:index+ntimes]  # From index (lead=0) onwards
+            forecast[tt, imem, :ntimes] = sst_ts_in[index:index+ntimes]  # CHANGED FROM analogue_ts From index (lead=0) onwards
 
             # And store the mean/sd during the analogue period
             # (really should be made elsewhere, but would require more of a rewrite)
@@ -529,6 +553,7 @@ def read_forecast_data(corr_info, nlead):
             # for that LENGTH of window. I've now modified to use multiple different lengths
             for imean_window, mean_window in enumerate(mean_windows):
                 if (index - mean_window) < 0:
+                    print("Window error")
                     continue
                 analogue_means[tt, imem, imean_window] = np.ma.mean(sst_ts_in[index-mean_window:index])
                 analogue_sds[tt, imem, imean_window] = np.ma.std(sst_ts_in[index-mean_window:index])
@@ -611,19 +636,22 @@ if analogue_var != forecast_var:
         missing_model_expt_ens = handle.readlines()
         missing_model_expt_ens = [x.strip() for x in missing_model_expt_ens]
         missing_model_expt_ens = [x.split('_')[2] + '_' + x.split('_')[3] for x in missing_model_expt_ens]
-    print("Missiang model+expt_ens combinations:")
+    print("Missing model+expt_ens combinations:")
     print(missing_model_expt_ens)
 
 def check_allowed_file(filename, analogue_var, forecast_var):
     if analogue_var == forecast_var:
         return True
     this_model_expt_ens = os.path.basename(filename) # e.g. SST_+65+10+45-60_CanESM5_hist-nat-9_Window3_SpatialProcessed.pkl
-    this_model_expt_ens = this_model_expt_ens.split('_')[2] + '_' + this_model_expt_ens.split('_')[3]
+    this_model_expt_ens = this_model_expt_ens.split('_')[3] + '_' + this_model_expt_ens.split('_')[4]
+    print(this_model_expt_ens)
     this_model_expt_ens_piconversion = this_model_expt_ens[:-2]
     if (this_model_expt_ens in missing_model_expt_ens) or (this_model_expt_ens_piconversion in missing_model_expt_ens):
         print("Skipping ANALOGUE file because no associated FORECAST file")
+        print(this_model_expt_ens)
         return False
     else:
+        print("Associated FORECAST file found!")
         return True
 
 #This is required to appropriately write the _info file to .json
@@ -676,12 +704,12 @@ print(processed_files)
 for ifile, pf in enumerate(processed_files):
     print('{:d}/{:d} {:s}'.format(ifile+1, nfiles, pf))
     if not check_allowed_file(pf, analogue_var, forecast_var):
-        print(" ++ Skipping this file")
+        print(" ++ Skipping this file due to analogue-forecast mismatch")
         continue
     # if ifile > 10: continue###############################################################################
     split = os.path.basename(pf).split('_')
-    experiment_and_ens = split[3].split('-')
-    model = split[2]
+    experiment_and_ens = split[4].split('-')
+    model = split[3]
     if len(experiment_and_ens) == 2:
         experiment = experiment_and_ens[0]
         ens_mem = experiment_and_ens[1]
@@ -699,8 +727,8 @@ for ifile, pf in enumerate(processed_files):
     #with open(pf, 'rb') as handle:
     ds = xr.open_dataset(pf).to_array()
     ds_data = np.ma.masked_array(ds.values)
-    if np.isnan(ds_data[0]).all():
-        print(" ++ Skipping this file")
+    if np.isnan(ds_data[1]).all():
+        print(" ++ Skipping this file because of empty array")
         countom += 1
         continue
 
@@ -708,6 +736,7 @@ for ifile, pf in enumerate(processed_files):
     corr_annual = ds_data[0]
     corr_trend = ds_data[1]
     year_model = ds['time'].values
+    #print(year_model)
     #corr_annual, corr_trend, _, year_model = pickle.load(handle, encoding='latin')
     min_ann_corr, ann_corr_info = keep_best_corrs(corr_annual, min_ann_corr, ann_corr_info, model,
                                                   experiment, ens_mem, num_mems_to_take=num_mems_to_take,
@@ -719,21 +748,22 @@ for ifile, pf in enumerate(processed_files):
     
 print('Number of models omitted due to nan: {}'.format(countom))
 tmod = nfiles-countom
-print('Total number of models used: {}'.format(tmod))
+print('Total number of models loaded: {}'.format(tmod))
 
-print(min_ann_corr)
+#print(ann_corr_info)
+#print(min_ann_corr)
 
 t1 = time.time()
-print("Time taken do keep_best_corrs = {:.2f} minutes".format((t1 - t0) /60.))
+print("Time taken to keep_best_corrs = {:.2f} minutes".format((t1 - t0) /60.))
 
 print('Finding models and data associated with best analogues')
 trend_forecast, trend_forecast_means, trend_forecast_sds = read_forecast_data(trend_corr_info, nlead)
 t2 = time.time()
-print("Time taken do read_forecast_data (trends) = {:.2f} minutes".format((t2 - t1) /60.))
+print("Time taken to read_forecast_data (trends) = {:.2f} minutes".format((t2 - t1) /60.))
 
 ann_forecast, ann_forecast_means, ann_forecast_sds = read_forecast_data(ann_corr_info, nlead)
 t3 = time.time()
-print("Time taken do read_forecast_data (annual) = {:.2f} minutes".format((t3 - t2) /60.))
+print("Time taken to read_forecast_data (annual) = {:.2f} minutes".format((t3 - t2) /60.))
 # print('Creating actual analogue forecasts')
 # trend_forecast_anomt0 = trend_forecast - np.repeat(trend_forecast[:, :, 0][:, :, None], nlead, axis=2)
 # trend_forecast_anomt0_mmm = np.ma.mean(trend_forecast_anomt0, axis=1)
@@ -780,8 +810,17 @@ ntimes_array = range(1,12,1)
 
 print(year_model.shape, year_analogue_obs.shape, year_forecast_obs.shape, ann_corr_info.shape, ann_forecast.shape, ann_forecast_means.shape, ann_forecast_sds.shape, trend_corr_info.shape, trend_forecast.shape, trend_forecast_means.shape, trend_forecast_sds.shape)
 
+#if ((forecast_var == 'SAT') && (analogue_var == 'SST'):
+#    ann_corr_info_write = ann_corr_info[0:147,:,0]
+#    trend_corr_info_write = trend_corr_info[0:147,:,0]
+#else:
+#    ann_corr_info_write = ann_corr_info[:,:,0]
+#    trend_corr_info_write = trend_corr_info[:,:,0]
 ann_corr_info_write = ann_corr_info[:,:,0]
 trend_corr_info_write = trend_corr_info[:,:,0]
+
+if ((forecast_var == 'SAT') and (analogue_var == 'SST')):
+    year_analogue_obs = year_analogue_obs2
 
 info_xr = xr.DataArray(ann_corr_info_write, name='ann_corr_info', dims = ['time','member'], coords = {'time': (['time'],year_analogue_obs), 'member': (['member'],mem_array)}).to_dataset(name='ann_corr_info')
 info_xr['trend_corr_info'] = xr.DataArray(trend_corr_info_write, name='trend_corr_info', dims = ['time','member'], coords = {'time': (['time'],year_analogue_obs), 'member': (['member'],mem_array)})
@@ -791,7 +830,7 @@ info_xr3 = info_xr2.to_dict()
 
 forecast_xr = xr.DataArray(ann_forecast, name='ann_forecast', dims = ['time','member','ntimes'], coords = {'time': (['time'],year_analogue_obs), 'member': (['member'],mem_array), 'ntimes': (['ntimes'],ntimes_array)}).to_dataset(name='ann_forecast')
 forecast_xr['trend_forecast'] = xr.DataArray(trend_forecast, name='trend_forecast', dims = ['time','member','ntimes'], coords = {'time': (['time'],year_analogue_obs), 'member': (['member'],mem_array), 'ntimes': (['ntimes'],ntimes_array)})
-print(ann_forecast[:,14,2])
+print(ann_forecast[:,:,:])
 
 means_xr = xr.DataArray(ann_forecast_means, name='ann_forecast_means', dims = ['time','member','window'], coords = {'time': (['time'],year_analogue_obs), 'member': (['member'],mem_array), 'window': (['window'],window_array)}).to_dataset(name='ann_forecast_means')
 means_xr['ann_forecast_sds'] = xr.DataArray(ann_forecast_sds, name='ann_forecast_sds', dims = ['time','member','window'], coords = {'time': (['time'],year_analogue_obs), 'member': (['member'],mem_array), 'window': (['window'],window_array)})

@@ -33,7 +33,7 @@ export PYTHONPATH="$scripts_dir/python_modules/:${PYTHONPATH}"
 
 # The forecast region
 target_regions="north_atlantic subpolar_gyre"
-target_regions="southern_europe"
+target_regions="south_europe"
 # target_regions="subpolar_gyre"
 
 num_mems_to_take_options="1 2 3 4 5 6 7 8 9 10 12 15 20 50 100 200 500 1000"
@@ -51,8 +51,8 @@ target_domains="+75+45+45-05 +65+00+00-90 +65+10+45-60 +50+00+40-70 +30+20+00-85
 # target_domains="+065+000+000-090 +065+010+045-060 +030+100-030+040 +045+015+035-025 +005-120-005-170"
 target_domains="+045+015+035-025"
 
-smoothings="1 11 21"
-smoothings="5"
+smoothings="1 5 11 21"
+smoothings="1"
 
 subsets="picontrols_only None skip_local_hist strong_forcing_only"
 subsets="None"

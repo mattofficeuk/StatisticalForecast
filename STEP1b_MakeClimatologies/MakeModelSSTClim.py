@@ -30,8 +30,8 @@ datadir = '/work/scratch-nopw/{}/CMIP_{:s}/'.format(usr,analogue_var)
 
 if seas == "annual":
     climatology_file = os.path.join(datadir, 'CMIP_{:s}_{:s}_historical-EnsMn_TM{:d}-{:d}_Annual.nc'.format(analogue_var, model, clim_start, clim_end))
-elif seas == "JJA":
-    climatology_file = os.path.join(datadir, 'CMIP_{:s}_{:s}_historical-EnsMn_TM{:d}-{:d}_JJA.nc'.format(analogue_var, model, clim_start, clim_end))
+else:
+    climatology_file = os.path.join(datadir, 'CMIP_{:s}_{:s}_historical-EnsMn_TM{:d}-{:d}_{:s}.nc'.format(analogue_var, model, clim_start, clim_end, seas))
 
 tolerance = 0.9 * (clim_end - clim_start)
 
@@ -40,6 +40,7 @@ def regrid2d(fld2d_in, year_in):
     nyrs = len(year_in)
     area = get_area()
     fld2d_regridded = np.ma.masked_all(shape=(nyrs, nj, ni))
+    mask_regridded = np.ma.masked_all(shape=(nyrs, nj, ni))
 
     for tt in range(nyrs):
 #         if tt not in [97, 98, 99, 100]: continue
@@ -50,10 +51,10 @@ def regrid2d(fld2d_in, year_in):
         fld2d_regridded[tt, :, :] = interpolate.griddata(np.array([lat_in.ravel(), lon_in.ravel()]).T,
                                                        fld2d_in[0, tt, :, :].ravel(), (lat_re, lon_re),
                                                        method='linear')
-    mask_regridded = interpolate.griddata(np.array([lat_in.ravel(), lon_in.ravel()]).T,
-                                          fld2d_in[0, 0, :, :].mask.ravel(), (lat_re, lon_re),
-                                          method='linear')
-    fld2d_regridded = np.ma.array(fld2d_regridded, mask=np.repeat(mask_regridded[np.newaxis, :, :], nyrs, axis=0))
+        mask_regridded[tt, :, :] = interpolate.griddata(np.array([lat_in.ravel(), lon_in.ravel()]).T,
+                                                       fld2d_in[0, tt, :, :].mask.ravel(), (lat_re, lon_re),
+                                                       method='linear')
+    fld2d_regridded = np.ma.array(fld2d_regridded, mask=mask_regridded)
     return fld2d_regridded
 
 def get_area():
@@ -72,10 +73,10 @@ else:
         hist_files_field = glob.glob(os.path.join(datadir, 'CMIP?_{:s}field_{:s}_historical-*_Annual.nc'.format(analogue_var, model)))
         hist_files_field.sort()
         hist_files_mask = glob.glob(os.path.join(datadir, 'CMIP?_{:s}mask_{:s}_historical-1_Annual.nc'.format(analogue_var, model)))
-    elif seas == "JJA":
-        hist_files_field = glob.glob(os.path.join(datadir, 'CMIP?_{:s}field_{:s}_historical-*_JJA.nc'.format(analogue_var, model)))
+    else:
+        hist_files_field = glob.glob(os.path.join(datadir, 'CMIP?_{:s}field_{:s}_historical-*_{:s}.nc'.format(analogue_var, model, seas)))
         hist_files_field.sort()
-        hist_files_mask = glob.glob(os.path.join(datadir, 'CMIP?_{:s}mask_{:s}_historical-1_JJA.nc'.format(analogue_var, model)))
+        hist_files_mask = glob.glob(os.path.join(datadir, 'CMIP?_{:s}mask_{:s}_historical-1_{:s}.nc'.format(analogue_var, model, seas)))
 
     nj, ni = 180, 360
     lon_re = np.repeat((np.arange(-180, 180) + 0.5)[np.newaxis, :], nj, axis=0)

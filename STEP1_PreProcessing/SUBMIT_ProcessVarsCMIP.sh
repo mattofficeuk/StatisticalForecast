@@ -71,7 +71,7 @@ sleep 1
 remake_saves="True"
 testing="False"
 #seasonal="False"
-period="MAM"	#options: seasonal, annual, JJA, MAM
+period="annual"	#options: seasonal, annual, JJA, MAM
 time_series_only="False"
 
 if [[ $testing == "True" ]]

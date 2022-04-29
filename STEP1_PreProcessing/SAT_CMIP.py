@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 
+# ===============
+# Set variables & modules
+# ===============
+
 # host = 'ciclad'
 host = 'jasmin'
 
@@ -39,13 +43,14 @@ else:
 experiment = sys.argv[1]
 ens_mem = sys.argv[2]
 model = sys.argv[3]
-period_string = sys.argv[4]
+period_string = sys.argv[4]	
 time_series_only = sys.argv[5]
 testing = sys.argv[6]
 list_location = sys.argv[7]
 
 print('Inputs: ', sys.argv)
 
+# These set boundary variables; DO NOT CHANGE. The actual season is read in from period_string above.
 seasonal = False
 annual = False
 JJA = False
@@ -196,8 +201,6 @@ if experiment == 'piControl':
 else:
     ens_mem_string = '-{:s}'.format(ens_mem)
 
-# save_file = '{:s}/{:s}_SAT_{:s}_{:s}{:s}_Monthly{:s}.pkl'.format(save_dir, project, model, experiment, ens_mem_string, time_series_only_string)
-# save_file_ann = '{:s}/{:s}_SAT_{:s}_{:s}{:s}_Annual{:s}.pkl'.format(save_dir, project, model, experiment, ens_mem_string, time_series_only_string)
 if annual:
     save_file_regridded = '{:s}/{:s}_SATfield_{:s}_{:s}{:s}_Annual.nc'.format(save_dir, project, model, experiment, ens_mem_string, time_series_only_string)
     save_file_mask = '{:s}/{:s}_SATmask_{:s}_{:s}{:s}_Annual.nc'.format(save_dir, project, model, experiment, ens_mem_string, time_series_only_string)
@@ -211,7 +214,6 @@ if TESTING:
     # save_file_ann += '.TEST'
     save_file_regridded += '.TEST'
 
-# print "Will save to:\n{:s}\n{:s}\n{:s}\n".format(save_file, save_file_ann, save_file_regridded)
 print("Will save to: {:s}".format(save_file_regridded))
 
 # ==================

@@ -2,8 +2,8 @@
 
 #sleep 2h
 
-seas=MAM	#choose between annual and JJA and MAM currently
-var=SST
+seas=JJA	#choose between annual, JJA and MAM currently
+var=SAT
 #var=DepthAverageT
 echo "Running for username: $USER"
 usr=$USER
@@ -93,7 +93,7 @@ target_domains="+045+015+035-025"
 
 smoothings="1 5 11 21"
 smoothings="1 11 21"
-smoothings="5"
+smoothings="1 5"
 
 if [[ $choice == 'test' ]]
 then
@@ -214,7 +214,7 @@ do
 
     						${scripts_dir}/queue_spacer_sbatch.sh $max_jobs  # This will check every 120s if I have less than 100 jobs in the Q
 
-    						cmd="sbatch -p $queue -t 24:00:00 -n 1 -o ${output} -e ${error} ${runscript} ${model} ${experiment} ${ens_mem} ${seas} ${window} ${target_domain} ${smoothing} ${testing} ${clim_string} ${concatenate_string} ${scripts_dir}"
+    						cmd="sbatch -p $queue -t 24:00:00 -n 1 -o ${output} -e ${error} ${runscript} ${model} ${experiment} ${ens_mem} ${seas} ${window} ${target_domain} ${smoothing} ${testing} ${var} ${clim_string} ${concatenate_string} ${scripts_dir}"
     						echo $cmd
     						$cmd
     						#exit

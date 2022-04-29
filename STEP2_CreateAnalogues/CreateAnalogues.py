@@ -4,7 +4,7 @@
 residual = False
 method='RMSE'  # Overwrite the "spatial correlation" with RMSE instead
 # analogue_var = 'DepthAverageT'
-analogue_var = 'SST'
+#analogue_var = 'SST'
 
 # Whether to save the trends data. This will look into a separate file (which must exist)
 # that tells the script whether to save the trends or not. If these trends are not required
@@ -27,9 +27,7 @@ myhost = os.uname()[1]
 print("myhost = {:s}".format(myhost))
 usr = os.environ["USER"]
 
-## HACK to quickly re-add selection.py to my path
-modules_dir = '/home/users/{:s}/StatisticalForecast/python_modules'.format(usr)
-sys.path.append(modules_dir)
+analogue_var = sys.argv[9]
 
 if 'ciclad' in myhost:
     # Ciclad options
@@ -75,10 +73,11 @@ window = np.long(sys.argv[5])
 target_domain_string = sys.argv[6]
 smoothing = np.long(sys.argv[7])  # This is the x/y (regridded) spatial smoothing
 testing = sys.argv[8]
-clim_string = sys.argv[9]
-concatenate_string = sys.argv[10] # Whether to try and merge available future experiments into the historical ones (but not the other
+analogue_var = sys.argv[9]
+clim_string = sys.argv[10]
+concatenate_string = sys.argv[11] # Whether to try and merge available future experiments into the historical ones (but not the other
                                  # way around) in order to avoid an artificial cutoff around 2005/2015
-scripts_dir = sys.argv[11]
+scripts_dir = sys.argv[12]
 
 clim_start = int(clim_string[:4])
 clim_end = int(clim_string[5:])
@@ -257,7 +256,6 @@ if os.path.isfile(this_file_field):
 else:
     raise ValueError("{:s} does not exist".format(this_file_field))
 
-print(sst_in.compressed)
 
 if os.path.isfile(this_file_timeser):
     ds_timeser = xr.open_dataset(this_file_timeser)
@@ -294,7 +292,6 @@ if concatenate_hist_with_fut:
                 print(" --||-- Concatenating historical and future simulations")
                 unique_years = np.unique(np.concatenate((year_model_in, year_model_fut_in)))
                 concat_sst = np.ma.masked_all(shape=(len(unique_years), nj_hist, ni_hist))
-                print(concat_sst.shape)
                 for tt, year in enumerate(unique_years):
                     if year in year_model_fut_in:
                         # Choose future first so if there are duplicates we choose the future experiment
@@ -358,40 +355,25 @@ def regrid_sst(sst_in, year_in):
     nyrs = len(year_in)
     area = get_area()
     sst_regridded = np.ma.masked_all(shape=(nyrs, nj, ni))
+    mask_regridded = np.ma.masked_all(shape=(nyrs, nj, ni))
 
     for tt in range(nyrs):
 #         if tt not in [97, 98, 99, 100]: continue
         print('{:d}/{:d}'.format(tt, nyrs))
-        #print(len(np.array([lat_in.ravel(), lon_in.ravel()]).T))
-        #print(len(sst_in[0, 0, :, :].ravel()))
-        #print(len(sst_in[0, 0, :, :].mask.ravel()))
         sst_regridded[tt, :, :] = interpolate.griddata(np.array([lat_in.ravel(), lon_in.ravel()]).T,
                                                        sst_in[0, tt, :, :].ravel(), (lat_re, lon_re),
                                                        method='linear')
-
-    for tt in range(nyrs):
-        mask_regridded = interpolate.griddata(np.array([lat_in.ravel(), lon_in.ravel()]).T,
-                                              sst_in[0, tt, :, :].mask.ravel(), (lat_re, lon_re),
-                                              method='linear')
-        if np.count_nonzero(mask_regridded) != (nj * ni):
-            ## Zero is unmasked, so if the number of nonzeros is the same as the full array size then
-            ## we know we need to carry on looking. Done this way because it handles "nan" better
-            break
-
-    # mask_regridded = interpolate.griddata(np.array([lat_in.ravel(), lon_in.ravel()]).T,
-    #                                      sst_in[0, 0, :, :].mask.ravel(), (lat_re, lon_re),
-    #                                      method='linear')
-    #print(mask_regridded)
-    sst_regridded = np.ma.array(sst_regridded, mask=np.repeat(mask_regridded[np.newaxis, :, :], nyrs))	#, axis=0))
-    # sst_regridded = np.ma.array(sst_regridded, mask=mask_regridded)	#, axis=0))
-    print(sst_regridded.compress)
+        mask_regridded[tt, :, :] = interpolate.griddata(np.array([lat_in.ravel(), lon_in.ravel()]).T,
+                                                       sst_in[0, tt, :, :].mask.ravel(), (lat_re, lon_re),
+                                                       method='linear')
+    sst_regridded = np.ma.array(sst_regridded, mask=mask_regridded)
     return sst_regridded
 
 def mask_by_domain(sst_in, year_in):
     # TODO: If smoothing then increase this mask size appropriately so it won't be too small later
-    mask = ((lon_re > (target_domain[1]+smoothing//2)) | (lon_re < (target_domain[3]-smoothing//2)) | (lat_re > (target_domain[0]+smoothing//2)) | (lat_re < (target_domain[2]-smoothing//2)))
-    mask = np.repeat(mask[None, :, :], len(year_in), axis=0)
-    sst_masked = np.ma.array(sst_in, mask=mask)
+    lon_re1 = np.repeat(lon_re[None, :, :], len(year_in), axis=0)
+    lat_re1 = np.repeat(lat_re[None, :, :], len(year_in), axis=0) 
+    sst_masked = np.ma.masked_where((((lat_re1<(target_domain[2]-smoothing//2)) | (lat_re1>(target_domain[0]+smoothing//2))) & ((lon_re1<(target_domain[3]-smoothing//2)) | (lon_re1>(target_domain[1]+smoothing//2)))), sst_in)
     return sst_masked
 
 def compute_trend_in_windows(sst_masked, year_in, window_in, tol=0.9):
@@ -449,8 +431,6 @@ def make_anomaly(sst_masked, year_in, target=False, model=False):
     if target:
         sst_masked = sst_masked - target_sst_regrided_clim[np.newaxis, :, :]
     elif model:
-        print(sst_masked.shape)
-        print(sst_clim[np.newaxis, :, :].shape)
         sst_masked = sst_masked - sst_clim	#[np.newaxis, :, :]
     return sst_masked
 
@@ -460,7 +440,6 @@ def smooth(in_arr):
     min_frac = 0.4
     smoothing_sq = smoothing**2.
     out_arr = np.ma.masked_all_like(in_arr)
-    print(in_arr.shape)
     nt, _, _ = in_arr.shape
     area = get_area()
     for jj in range(0, nj-smoothing, step):
@@ -541,7 +520,7 @@ def find_climatology_for_model(model):
     if seas == "annual":
         climatology_file = os.path.join(datadir, 'CMIP_{:s}_{:s}_historical-EnsMn_TM{:d}-{:d}_Annual.nc'.format(analogue_var, model, clim_start, clim_end))
     else:
-        climatology_file = os.path.join(datadir, 'CMIP_{:s}_{:s}_historical-EnsMn_TM{:d}-{:d}_JJA.nc'.format(analogue_var, model, clim_start, clim_end))
+        climatology_file = os.path.join(datadir, 'CMIP_{:s}_{:s}_historical-EnsMn_TM{:d}-{:d}_{:s}.nc'.format(analogue_var, model, clim_start, clim_end, seas))
     if os.path.isfile(climatology_file):
         #with open(climatology_file, 'rb') as handle:
         #    sst_clim = pickle.load(handle,encoding='latin')
@@ -565,16 +544,13 @@ sst_regridded = regrid_sst(sst_model, year_model)
 print('Masking MODEL {:s}'.format(analogue_var))
 sst_masked = mask_by_domain(sst_regridded, year_model)
 
-print(sst_model)
-#print(sst_regridded.compressed)
-#print(sst_masked.compressed)
-
 print('Masking TARGET {:s}'.format(analogue_var))
 if 'target_masked' in target_keys:
     target_masked = target_saved['target_masked']
 else:
     target_masked = mask_by_domain(target_sst_regridded, year_ann)
     target_saved['target_masked'] = target_masked
+
 
 print("Computing trends for TARGET")
 if 'target_masked_trend' in target_keys:
@@ -607,9 +583,11 @@ else:
 
 print("Making anomaly w.r.t. {:d}-{:d} mean for MODEL".format(clim_start, clim_end))
 sst_clim = find_climatology_for_model(model)
+
 print('SST_masked_mean is now:{}'.format(sst_masked_mean.shape))
 print('SST_clim is now:{}'.format(sst_clim.shape))
 sst_masked_mean_anom = make_anomaly(sst_masked_mean, year_model, model=True)
+
 
 # Smooth first if necessary. Don't need to do this for each window as we will
 # cut off the ends each time anyway
@@ -642,7 +620,6 @@ corr_trend = selection.csc(method, target_masked_trend, year_ann, sst_masked_tre
 
 # TEMPORAL FIX: Writing np arrays to xarray for exporting as .nc files.
 print("Forming xarray files for printing")
-print(corr_ann.compressed)
 corr_print = xr.DataArray(corr_ann, name="corr_ann", dims = ['time_pred','time'], coords = {'time_pred': (['time_pred'],year_ann),'time': (['time'],year_model)}).to_dataset(name='corr_ann')
 corr_print['corr_trend'] = xr.DataArray(corr_trend, name="corr_trend", dims = ['time_pred','time'], coords = {'time_pred': (['time_pred'],year_ann),'time': (['time'],year_model)})
 
