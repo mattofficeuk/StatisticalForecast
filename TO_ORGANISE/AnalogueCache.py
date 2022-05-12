@@ -38,7 +38,8 @@ testing = False
 
 ## THIS WILL NEED CHANGING TO SOMETHING LIKE
 ## /work/scratch-nopw/lfbor/CMIP_SAT
-datadir = '/work/scratch-nopw/{:s}/CMIP_{:s}/'.format(var)
+user = "lfbor"
+datadir = '/work/scratch-nopw/{:s}/CMIP_{:s}/'.format(user, var)
 
 # processed_output_dir = '/modfs/ipslfs/dods/mmenary/AnalogueCache/'
 # max_lead = 20
