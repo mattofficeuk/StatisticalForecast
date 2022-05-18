@@ -58,7 +58,7 @@ JJA = False
 if period_string == 'Seasonal':
     seasonal = True
     save_dir += '_Seas'
-elif period_string == 'Annual':
+elif period_string == 'annual':
     annual = True
 elif period_string == 'JJA':
     JJA = True

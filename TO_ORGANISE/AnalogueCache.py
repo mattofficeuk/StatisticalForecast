@@ -1,12 +1,15 @@
 # var = 'SST'
 var = 'SAT'
+seas = 'JJA'
 
 # For SST the regions are these:
-regions = ['north_atlantic', 'subpolar_gyre', 'intergyre', 'tropical_atlantic_north',
-           'tropical_atlantic_south', 'global', 'global60', 'nh', 'spg_rahmstorf', 'spg_menary18']
+#regions = ['north_atlantic', 'subpolar_gyre', 'intergyre', 'tropical_atlantic_north',
+#           'tropical_atlantic_south', 'global', 'global60', 'nh', 'spg_rahmstorf', 'spg_menary18']
 
 # For SAT:
-# regions = ['europe1']
+regions = ['europe1', 'south_europe']
+
+user = "lfbor"
 
 import numpy as np
 import glob
@@ -15,11 +18,18 @@ import os
 from scipy import stats
 import time
 import sys
+import xarray as xr
+
+scripts_dir = '/home/users/{}/python/scripts3/python_modules'.format(user)
+sys.path.insert(0, scripts_dir)
 import mfilter
 import random
 
 # ==============
+analogue_skill_score = "Corr"
 testing = False
+target_region = "south_europe"
+window = 35
 # ==============
 
 # ==============
@@ -38,10 +48,9 @@ testing = False
 
 ## THIS WILL NEED CHANGING TO SOMETHING LIKE
 ## /work/scratch-nopw/lfbor/CMIP_SAT
-user = "lfbor"
 datadir = '/work/scratch-nopw/{:s}/CMIP_{:s}/'.format(user, var)
 
-# processed_output_dir = '/modfs/ipslfs/dods/mmenary/AnalogueCache/'
+processed_output_dir = '/work/scratch-nopw/{:s}/AnalogueCache/'.format(user)
 # max_lead = 20
 # forecast_metric = 'MaxCorr'
 
@@ -69,6 +78,9 @@ datadir = '/work/scratch-nopw/{:s}/CMIP_{:s}/'.format(user, var)
 #                              'historical']
 # else:
 #     raise ValueError("Not programmed other sets yet")
+experiments_processed = ['hist-aer', 'hist-stratO3', 'rcp85', 'hist-GHG',
+                              'ssp126', 'rcp45', 'ssp585', 'piControl', 'hist-nat',
+                              'historical']
 
 if analogue_skill_score  == 'Corr':
     smoothing = False
@@ -80,7 +92,7 @@ else:
 
 if testing:
     testing_string = '_TEST'
-    print "\n+|+ TESTING +|+\n"
+    print("\n+|+ TESTING +|+\n")
 else:
     testing_string = ''
 
@@ -130,46 +142,49 @@ def skip_this_one(probability_of_skipping):
     return random.random() < probability_of_skipping
 
 # This has all the raw data in
-input_save_file = '/data/mmenary/python_saves/HistoricalAnalogues_Inputs_{:s}.pkl'.format(var)
+input_save_file = '/home/users/{:s}/python/scripts3/TO_ORGANISE/HistoricalAnalogues_Inputs_{:s}.pkl'.format(user,var)
 
 # # This is where we will store the processed correlations
-# experiments_processed_string = '-'.join(experiments_processed)
-# regions_processed_string = '-'.join(regions_processed)
-# processed_save_file = '{:s}HistoricalAnalogues_Processed_Target-{:s}_{:s}_{:s}_{:s}_Window{:d}.pkl'
-# processed_save_file = processed_save_file.format(processed_output_dir, target_region,
-#                                                  experiments_processed_string, regions_processed_string,
-#                                                  analogue_skill_score, window)
+experiments_processed_string = '-'.join(experiments_processed)
+regions_processed_string = '-'.join(regions)	#(regions_processed)
+processed_save_file = '{:s}HistoricalAnalogues_Processed_Target-{:s}_{:s}_{:s}_{:s}_Window{:d}.pkl'
+processed_save_file = processed_save_file.format(processed_output_dir, target_region,
+                                                  experiments_processed_string, regions_processed_string,
+                                                  analogue_skill_score, window)
 # if testing:
 #     processed_save_file += '.TEST.pkl'
 
 # ==============
-print "Save data files to read will be:"
-print input_save_file
-print processed_save_file
-print " "
+print("Save data files to read will be:")
+print(input_save_file)
+print(processed_save_file)
+print(" ")
 # ==============
 
 # ==============
 # Put the input data into a (useful?) structure
 # ==============
-print "Reading source (model) data"
+print("Reading source (model) data")
 if os.path.isfile(input_save_file):
     with open(input_save_file, 'rb') as handle:
-        print "Loading save file: {:s}".format(input_save_file)
-        stored_data = pickle.load(handle)
-        print "Loading finished..."
+        print("Loading save file: {:s}".format(input_save_file))
+        stored_data = pickle.load(handle,encoding='latin')
+        print("Loading finished...")
 else:
-    files = glob.glob(datadir + 'CMIP?_{:s}_*_*_Annual.pkl'.format(var))
+    files = glob.glob(datadir + 'CMIP?_{:s}timeser_*_*_{:s}.nc'.format(var, seas))
+    #files = glob.glob(datadir + 'CMIP?_{:s}_*_*_Annual.pkl'.format(var))
     # files = glob.glob(datadir + 'CMIP?_SST_*_*_Annual_TimeSeries.pkl')
     nfiles = len(files)
+    print(files)
+    print(nfiles)
 
     stored_data = []
     for ifile, this_file in enumerate(files):
         base_file = os.path.basename(this_file)
         split_file = base_file.split('_')
-        print '{:d}/{:d}: {:s}'.format(ifile+1, nfiles, base_file)
+        print('{:d}/{:d}: {:s}'.format(ifile+1, nfiles, base_file))
         project = split_file[0]
-        var = split_file[1]
+        #var = split_file[1]
         model = split_file[2]
         experiment_and_ens = split_file[3].split('-')
 
@@ -186,22 +201,29 @@ else:
             experiment = experiment_and_ens[0] + '-' + experiment_and_ens[1]
             ens_mem_part = experiment_and_ens[2]
 
-        ens_mem = long(ens_mem_part)
+        ens_mem = int(ens_mem_part)
         # if experiment[:7] == 'decadal':
         #     continue
 
-        with open(this_file, 'rb') as handle:
+        #with open(this_file, 'rb') as handle:
             ## THIS WILL NEED UPDATING
-            _, sst_ts_ann, _, _, _, year_ann = pickle.load(handle)
+            #_, sst_ts_ann, _, _, _, year_ann = pickle.load(handle)
             # sst_ts_ann, year_ann = pickle.load(handle)
-            for iregion, region in enumerate(regions):
-                if region not in sst_ts_ann.keys():
-                    continue
-                new_time_series = CMIPTimeSeries(project, var, region, model, experiment, year_ann,
-                                                 sst_ts_ann[region], ens_mem=ens_mem)
-                stored_data.append(new_time_series)
+        ds_timeser = xr.open_dataset(this_file)
+        year_ann = ds_timeser['time'].values
+        print('Time series loaded')
+        print(ds_timeser)
+        #sst_ts_ann = np.ma.masked_array(ds_timeser.to_array().values)
+        for iregion, region in enumerate(regions):
+            #if region not in sst_ts_ann.keys():
+            #    continue
+            sst_ts_ann = np.ma.masked_array(ds_timeser[region].values)
+            new_time_series = CMIPTimeSeries(project, var, region, model, experiment, year_ann, sst_ts_ann, ens_mem=ens_mem)
+            stored_data.append(new_time_series)
+            print(project, var, region, model, experiment, year_ann, sst_ts_ann, ens_mem)
 
     with open(input_save_file, 'wb') as handle:
-        print "Writing save file: {:s}".format(input_save_file)
+        print("Writing save file: {:s}".format(input_save_file))
+        print(stored_data)
         pickle.dump(stored_data, handle,  protocol=pickle.HIGHEST_PROTOCOL)
-        print "Writing finished..."
+        print("Writing finished...")
