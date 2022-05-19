@@ -2,8 +2,8 @@
 # sleep 1h
 echo "Beginning loops!"
 
-var=SST
-cursory_initial_check="True"
+var=SAT
+cursory_initial_check="False"  ## This has to be false for DCPP data unless we check the proper directories
 echo "Running for username: $USER"
 usr=$USER
 
@@ -32,25 +32,33 @@ then
   model_list=${lists_dir}/cmip5_list.txt
   experiments="historical rcp45 rcp85"
   ens_mems="1 2 3 4 5 6 7 8 9 10"
-        projects="CMIP5"
+  projects="CMIP5"
 elif [[ $choice == 'cmip6' ]]
 then
   model_list=${lists_dir}/cmip6_list.txt
   experiments="historical ssp126 ssp585"
   ens_mems="1 2 3 4 5 6 7 8 9 10"
-        projects="CMIP6"
+  projects="CMIP6"
 elif [[ $choice == 'picon' ]]
 then
   model_list=${lists_dir}/cmip5_and_cmip6_list.txt
   experiments="piControl"
   ens_mems="1"
-        projects="CMIP5 CMIP6"
+  projects="CMIP5 CMIP6"
 elif [[ $choice == 'damip6' ]]
 then
   model_list=${lists_dir}/damip_list.txt
   experiments="hist-GHG hist-aer hist-nat hist-stratO3"
   ens_mems="1 2 3 4 5 6 7 8 9 10"
-        projects="CMIP6"
+  projects="CMIP6"
+elif [[ $choice == 'dcpp' ]]
+then
+  model_list=${lists_dir}/dcpp_list.txt
+  experiments="decadal1960 decadal1961 decadal1962 decadal1963 decadal1964 decadal1965 decadal1966 decadal1967 decadal1968 decadal1969 decadal1970 decadal1971 decadal1972 decadal1973 decadal1974 decadal1975 decadal1976 decadal1977 decadal1978 decadal1979 decadal1980 decadal1981 decadal1982 decadal1983 decadal1984 decadal1985 decadal1986 decadal1987 decadal1988 decadal1989 decadal1990 decadal1991 decadal1992 decadal1993 decadal1994 decadal1995 decadal1996 decadal1997 decadal1998 decadal1999 decadal2000 decadal2001 decadal2002 decadal2003 decadal2004 decadal2005 decadal2006 decadal2007 decadal2008 decadal2009 decadal2010 decadal2011 decadal2012 decadal2013 decadal2014 decadal2015 decadal2016 decadal2017 decadal2018"
+  ens_mems="1 2 3 4 5 6 7 8 9 10"
+  projects="CMIP5 CMIP6"
+  # ens_mems="1"      ## TESTING
+  # projects="CMIP6"  ## TESTING
 elif [[ $choice == 'test' ]]
 then
   model_list=${lists_dir}/test_list.txt
